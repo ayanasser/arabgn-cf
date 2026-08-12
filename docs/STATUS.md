@@ -68,19 +68,20 @@ input or an annotated gold set is done. See `docs/AUTHOR-ACTIONS.md`.
 | REVIEW skips name their blocking decision | ✅ | count printed in pytest header |
 | Normalisation + contract tests | ✅ | `tests/` |
 
-## 4. Phase 2A — Adjudication tooling 🟡
+## 4. Phase 2A — Adjudication tooling ✅ (tooling) / ⛔ (gold set)
 
 Buildable without you; the **gold set** is not.
 
 | Item | Status |
 |---|---|
-| Blind annotation interface (§8.2) | ⬜ |
-| `unclear` recorded, never coerced (§8.1) | ⬜ |
-| Append-only store, annotator id + timestamp | ⬜ |
-| Stratified sampling (§8.3) | ⬜ |
-| Cohen's κ + κ ≥ 0.7 hard gate | ⬜ |
-| Third-annotator adjudication (§8.4) | ⬜ |
-| Joint θ separability check (ADR 001) | ⬜ |
+| Blind annotation interface (§8.2) | ✅ structural — `AnnotationItem` has no prediction fields |
+| `unclear` recorded, never coerced (§8.1) | ✅ |
+| Append-only store, annotator id + timestamp | ✅ no update/delete path exists |
+| Stratified sampling (§8.3) | ✅ error class is part of the stratum key |
+| Cohen's κ + κ ≥ 0.7 hard gate | ✅ raises, does not warn |
+| Third-annotator adjudication (§8.4) | ✅ persistent disagreement → `unclear` |
+| Joint θ separability check (ADR 001) | ✅ sweeps both parameters |
+| CLI (`annotate`, `kappa`) | ✅ `arabgn/adjudication/cli.py` |
 | **Annotated gold set** | ⛔ **human lead time — days** |
 
 ## 5. Phase 2B — Tier A/B extractor 🟡
@@ -146,3 +147,4 @@ Findings from each pass are recorded in the review log below.
 | Item | Pass 1 findings | Pass 2 findings |
 |---|---|---|
 | Phase 1 normalisation | Guard baselined on raw input; NFC composition flagged as a violation. **Fixed** — baseline is now the NFC form. | — |
+| Phase 2A adjudication | (1) Over-sampling weighted the *whole stratum* containing an error-class cue, not the class — a `مطلوبة` cue gave 9 neighbours 3× weight too. **Fixed**: error class is now part of the stratum key. (2) `adjudicate` missing from `__all__`. (3) `id()` used for test ids — a memory address, nondeterministic. Both **fixed**. | `strata_fields` declared 5 names while keys carried 6 elements, so keys could not be reconstructed positionally. **Fixed**: `error_class` appended. Verified over-sampling now draws §7.1 at 2.22× base rate (was diffuse). |
