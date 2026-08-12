@@ -22,7 +22,7 @@ and `docs/project-plan.md` (all eleven phases).
 | D10 Lockfile | **Closed** — `uv` | `006-lockfile-uv.md` |
 | D11 Freeze boundary | **Closed** — split, explicit manifest | `007-freeze-boundary.md` |
 | D12 Abstain trigger counts | Open — direction stated, **needs sign-off** | — |
-| D13 Determinism | Open — verified; becomes an asserted test |
+| D13 Determinism | Open — verified; becomes an asserted test | — |
 | **D14 AB4 is gender-asymmetric** | **Open, P0** — found 12 Aug by the Phase 3 harness; `docs/findings/001-ab4-is-gender-asymmetric.md` | — |
 
 ---
