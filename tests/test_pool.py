@@ -101,7 +101,7 @@ def test_tier_c_adjectives_resolve_by_inheritance():
     cues, skipped = extract_cues(
         doc, analysed, THETA, toolkit_version="1.6.0", db_version="calima-msa-r13"
     )
-    assert skipped["tier_c"] == 0
+    assert skipped["verb_branch"] == 0
     assert [c.token for c in cues] == ["خبرة", "واسعة"]
 
     adjective = cues[1]
@@ -126,7 +126,7 @@ def test_tier_c_verbs_are_skipped_and_counted():
     cues, skipped = extract_cues(
         doc, analysed, THETA, toolkit_version="1.6.0", db_version="calima-msa-r13"
     )
-    assert skipped["tier_c"] == 1
+    assert skipped["verb_branch"] == 1
     assert "تخرجت" not in [c.token for c in cues]
 
 
@@ -273,7 +273,7 @@ def test_verbatim_repeated_advertisements_collapse_and_are_counted():
         twins, FakeDisambiguator({text: analysed}), n=1, seed=7, config=THETA
     )
     assert result.counts.cues_duplicate_documents == 1
-    assert result.counts.cues_tier_ab == 1
+    assert result.counts.cues_classified == 1
     assert len({cue.cue_id for cue in result.cues}) == len(result.cues)
 
 

@@ -63,8 +63,9 @@ def _report(result, corpus_checksum: str, out_dir: Path) -> str:
         "| | count |",
         "|---|---|",
         f"| detected | {counts.cues_detected} |",
-        f"| Tier A/B, in pool | {counts.cues_tier_ab} |",
-        f"| **Tier C, skipped (D7/D8)** | **{counts.cues_tier_c_skipped}** |",
+        f"| classified — Tiers A, B and C | {counts.cues_classified} |",
+        f"| **verbs skipped at the agreement step (D8)** | "
+        f"**{counts.cues_verb_branch_skipped}** |",
         f"| span crossed a segment boundary, skipped | {counts.cues_no_segment} |",
         f"| collapsed — advertisement repeated verbatim | "
         f"{counts.cues_duplicate_documents} |",
@@ -110,8 +111,10 @@ def _report(result, corpus_checksum: str, out_dir: Path) -> str:
         "reported and contributes nothing to stratification (register D16).",
         "2. **No cue can carry `referent = applicant`.** D7 is open, so the role "
         "test is indeterminate and every rational cue abstains under AB6.",
-        "3. **Tier C is absent** — the tier carrying `تخرجت`, `حاصلة`, `مسؤولة`, "
-        "which architecture §4.3 calls the core of C1.",
+        "3. **Tier C's verb branch is absent** (register D8, pro-drop) — the "
+        "branch carrying `تخرجت` and `عملت`. The adjective branch resolves. A "
+        "verb whose candidates disagree on gender still enters the pool under "
+        "AB4, since that decision needs no pro-drop default.",
         f"4. **θ is provisional**, so stratum membership will shift if "
         f"calibration moves it. Annotator labels stay valid; the draw would need "
         f"repeating.",

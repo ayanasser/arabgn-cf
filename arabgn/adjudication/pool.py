@@ -97,8 +97,14 @@ class PoolCounts:
     docs: int
     tokens: int
     cues_detected: int
-    cues_tier_ab: int
-    cues_tier_c_skipped: int
+    #: Cues that reached a classification. Tiers A, B and C — the name no longer
+    #: says "tier_ab", because Tier C's adjective branch now resolves.
+    cues_classified: int
+    #: Verbs dropped at the agreement step, blocked on register D8 (pro-drop).
+    #: **Not all verbs**: one whose candidates disagree on gender abstains under
+    #: AB4 before the agreement step is reached, and that decision needs no
+    #: pro-drop default, so it is kept.
+    cues_verb_branch_skipped: int
     cues_no_segment: int
     cues_form_gen_absent: int
     #: Cues collapsed because ArabJobs repeats an advertisement verbatim and
@@ -147,7 +153,7 @@ def extract_cues(
     """
     segments = segment(record.text_norm)
     cues: list[TaggedCue] = []
-    skipped = {"tier_c": 0, "no_segment": 0, "form_gen_absent": 0}
+    skipped = {"verb_branch": 0, "no_segment": 0, "form_gen_absent": 0}
 
     # Tier C searches backwards for an agreement target, and `punc` is skippable,
     # so an unbounded search would let a sentence-initial adjective attach to the
@@ -228,7 +234,7 @@ def extract_cues(
             # Verbs only. The subject may be pro-dropped and the default by
             # document type is register D8 — the branch carrying تخرجت / عملت,
             # which is what the paper is centrally about.
-            skipped["tier_c"] += 1
+            skipped["verb_branch"] += 1
             continue
 
         cues.append(
@@ -299,7 +305,7 @@ def build_pool(
     """Tag ``records``, stratify, and draw ``n`` cues for annotation."""
     all_cues: list[TaggedCue] = []
     meta: dict[str, DocRecord] = {}
-    totals = {"tier_c": 0, "no_segment": 0, "form_gen_absent": 0}
+    totals = {"verb_branch": 0, "no_segment": 0, "form_gen_absent": 0}
     tokens = 0
     # `doc_id` is a content hash, so the 849 advertisements ArabJobs repeats
     # verbatim share one. Their cues therefore share a `cue_id` and would collide
@@ -369,12 +375,12 @@ def build_pool(
         tokens=tokens,
         cues_detected=(
             len(all_cues)
-            + totals["tier_c"]
+            + totals["verb_branch"]
             + totals["no_segment"]
             + duplicate_cue_ids
         ),
-        cues_tier_ab=len(all_cues),
-        cues_tier_c_skipped=totals["tier_c"],
+        cues_classified=len(all_cues),
+        cues_verb_branch_skipped=totals["verb_branch"],
         cues_no_segment=totals["no_segment"],
         cues_form_gen_absent=totals["form_gen_absent"],
         cues_duplicate_documents=duplicate_cue_ids,
