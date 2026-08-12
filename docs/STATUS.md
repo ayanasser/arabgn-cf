@@ -116,6 +116,22 @@ Abstain triggers, all 296,991 Tier A/B cues:
 74% of all abstentions — do not move when θ is calibrated.** D14 therefore
 governs the majority of the abstain queue corpus-wide, not one fixture pair.
 
+### R3 is uncertifiable while D7 is open — 13 August 2026
+
+R3 (agreement-free) is the register whose entire purpose is certifying that no
+applicant-referring gender marking is present. The naive check — count cues
+labelled `applicant`, require zero — would **certify every document today**,
+because with the role test indeterminate no cue can be labelled `applicant` at
+all.
+
+`registers.check_r3` therefore treats an abstention as *unresolved*, never as
+*not applicant* (prohibition 3), and returns a third outcome: `certifiable =
+False`. While D7 is open every rational cue abstains under AB6, so no R3 document
+certifies. That is the honest position — the alternative is a register certified
+by a tagger incapable of finding the thing it certifies the absence of.
+
+This makes D7 a blocker for **C2's register typology** as well as for C1's Tier C.
+
 ## 5. Phase 2B — Tier A/B extractor ✅ (code) / ⛔ (frozen θ)
 
 | Item | Status |
@@ -154,7 +170,7 @@ Still a smoke test — Tiers A/B only. Phase 6 is the binding form.
 | 5 — Tier C | 🟡 **adjective branch built** (C01–C03 pass; C04-style ambiguity abstains under AB2). **Verb branch blocked on D8** (pro-drop); role test on D7; `شمس` on D9. |
 | 6 — twin symmetry, all tiers | Phase 5 |
 | 7 — ArabJobs sweep → C1 tables | 🟡 **loader built** — all 8,546 ads load, checksummed, ta-marbuta preserved. The **sweep** still needs Phases 4–6 and D9. |
-| 8 — generator | 🟡 **twin-pair invariants built** (`arabgn/analysis/twins.py`, frozen) — architecture §5.2's four enforced invariants, plus the tokenization delta measured per audit subject rather than forced to zero. The **generator** still needs the method decision; the register typology R1–R5 still needs a trustworthy tagger for R3. |
+| 8 — generator | 🟡 **invariants built, generator not.** `arabgn/analysis/twins.py` — §5.2's four enforced invariants plus the tokenization delta measured per audit subject rather than forced to zero. `arabgn/analysis/registers.py` — R1–R5 machine-checked invariants. Both frozen. The **generator** needs the method decision (template / LLM / hybrid), and **R3 cannot certify any document while D7 is open** — see below. |
 | 9 — blinding, freeze | ✅ **built** — HMAC blinding, ordering-leak detection, explicit-manifest freeze, CLI. Only the **external time anchor** still needs a human account (~1 h). |
 | 10 — analysis machinery | ✅ **built** — synthetic backend, variance decomposition, two-way cluster-robust SE, Holm, TOST, power curves, guarded reporting. The **pilot** still needs the generator (Phase 8) and a scoring pass. σ²_cv wording still owed. |
 | 11 — pre-registration → C4 | C3 numbers |

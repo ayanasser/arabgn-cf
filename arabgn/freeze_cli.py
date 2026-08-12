@@ -46,6 +46,7 @@ FROZEN_SOURCES: tuple[str, ...] = (
     "arabgn/analysis/cues.py",
     "arabgn/analysis/freeze.py",
     "arabgn/analysis/inference.py",
+    "arabgn/analysis/registers.py",
     "arabgn/analysis/reporting.py",
     "arabgn/analysis/sampling.py",
     "arabgn/analysis/segment.py",

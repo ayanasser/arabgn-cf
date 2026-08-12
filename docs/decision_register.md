@@ -28,6 +28,7 @@ and `docs/project-plan.md` (all eleven phases).
 | D16 Seniority derivation | Open — **blocks the seniority axis of §8.5 entirely** | — |
 | D17 Occupation column | Open — default applied, needs sign-off | — |
 | D18 Over-sample abstentions | **Closed** — ×3, matching the error-class weight | `008-oversample-abstentions.md` |
+| D19 What "structure" means for R4 | Open — length + content-word count applied | — |
 
 ---
 
@@ -208,6 +209,18 @@ matching the weight already applied to the known error classes. The sample is no
 deliberately unrepresentative, which carries a re-weighting obligation for any
 prevalence figure generalised from annotated cues; the weight and the per-stratum
 draw are both recorded on `SamplingPlan` so the correction is recoverable.
+
+**D19. What "structure" means for the R4 placebo.** Architecture §5.1 requires
+R4 to "match R2 in length and **structure**" and does not define the second word.
+`registers.py` operationalises it as identical content-word count plus a declared
+character-length tolerance — the same two measures `twins.py` uses, so R4 and the
+twin pairs are matched on comparable terms.
+
+That may be enough. If it is not — if R4 must also match clause count, or
+requirement-list length — the additional measure is an author decision, because
+R4's entire job is separating "responds to inclusive framing" from "responds to
+longer or more complex text", and what counts as "more complex" is the thing being
+controlled for. *Needs sign-off; blocks nothing until the generator exists.*
 
 ### P2 — blocks the freeze
 
