@@ -190,6 +190,25 @@ circumstance in which I touch a fixture.**
 1. **Proposal correction** — nothing downstream repairs it
 2. **D14 (AB4 asymmetry)** — P0; confounds C1 and blocks the Phase 6 gate
 3. **Annotator recruitment** — longest lead time, gates Phase 4 → 2B → 7
-4. **D8** — unblocks three fixtures and half of Phase 5
+4. **D8 (pro-drop)** — now the single biggest code unblock: the Tier C
+   adjective branch is built, so D8 completes Tier C and unblocks C05–C07,
+   Phase 6 and then Phase 7
 5. **D6** — scopes Phase 2B
-6. **D7** — hardest, blocks Phase 5
+6. **D7** — hardest, blocks the role test
+
+### Everything buildable without you is now built
+
+Remaining engineering work is blocked on the items above, on human annotation,
+or on an external account. Specifically:
+
+| Still to build | Waiting on |
+|---|---|
+| Tier C verb branch | **D8** |
+| Role test | **D7** |
+| Institution pre-pass | **D9** |
+| θ calibration | gold set (Phase 4) |
+| Phase 6 symmetry gate | Tier C |
+| Phase 7 C1 tables | Phases 4–6 |
+| Phase 8 generator | generation-method decision |
+| External time anchor | your account (~1 h) |
+| Pilot → C3 numbers | Phase 8 + a scoring pass |
