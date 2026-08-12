@@ -92,29 +92,48 @@ Buildable without you; the **gold set** is not.
 Not a C1 result: Tiers A/B only, provisional θ. Reported because the counts are
 large enough to change two open decisions.
 
+Re-run 13 August with Tier C's adjective branch live.
+
 | | |
 |---|---|
 | documents | 8,546 |
 | tokens analysed | 645,458 |
 | cues detected | 411,520 |
-| Tier A/B classified (distinct) | 296,991 |
-| **Tier C skipped — blocked on D7/D8** | **88,233 (21%)** |
-| collapsed — advertisement repeated verbatim | 26,296 |
-| abstentions | 118,022 (39.7%) |
+| classified — Tiers A, B, C | 365,709 |
+| **verbs skipped at the agreement step — D8** | **12,085** |
+| collapsed — advertisement repeated verbatim | 33,726 |
+| abstentions | 170,694 (46.7%) |
+
+Tier C is **68,718** cues — 61,551 adjectives and 7,167 verbs. The verbs are
+present because AB4 fires *before* the agreement step: a verb whose candidates
+disagree on gender abstains without needing a pro-drop default, so that decision
+is D8-independent.
 | `referent = applicant` | **0** — D7 is open, so every rational cue abstains under AB6 |
 
 Abstain triggers, all 296,991 Tier A/B cues:
 
 | Trigger | Count | Share of abstentions | Depends on θ? |
 |---|---|---|---|
-| **AB4** — gender disagreement | **63,743** | **54%** | **no** |
-| AB5 — form/functional divergence | 23,625 | 20% | no |
-| AB1 — rationality unresolved | 18,283 | 15% | yes |
-| AB6 — role test indeterminate | 12,371 | 10% | yes |
+| **AB4** — gender disagreement | **87,485** | **51%** | **no** |
+| AB2 — agreement target not identifiable | 24,994 | 15% | no |
+| AB5 — form/functional divergence | 23,934 | 14% | no |
+| AB1 — rationality unresolved | 18,283 | 11% | yes |
+| AB6 — role test indeterminate | 13,536 | 8% | yes |
+| AB3 — agreement target itself abstains | 2,462 | 1% | yes |
 
-**AB4 and AB5 fire ahead of the θ rule in `tiers.classify`, so those two counts —
-74% of all abstentions — do not move when θ is calibrated.** D14 therefore
-governs the majority of the abstain queue corpus-wide, not one fixture pair.
+**AB2, AB4 and AB5 do not depend on θ**, so 80% of the abstain queue does not move
+when θ is calibrated. D14 therefore governs half the queue corpus-wide, not one
+fixture pair.
+
+Two further numbers from this run:
+
+- **Tier C abstains 77% of the time** — 52,672 of 68,718. Only 16,046 resolve,
+  all to `non_applicant` inherited from an irrational target. Architecture §8.1
+  predicted Tier C would be the weakest tier and that hiding it would not be
+  defensible; that is now measured rather than anticipated.
+- **AB2 is 24,994** — for roughly a quarter of Tier C cues no agreement target is
+  recoverable by adjacency. That is the declared limit of the no-parser method
+  (`agreement_target.py`), now quantified rather than asserted.
 
 ### R3 is uncertifiable while D7 is open — 13 August 2026
 
@@ -167,7 +186,7 @@ Still a smoke test — Tiers A/B only. Phase 6 is the binding form.
 | Phase | Blocker |
 |---|---|
 | 4 — gold set κ ≥ 0.7 + θ calibration | Human annotation. **Both gates can fail.** |
-| 5 — Tier C | 🟡 **adjective branch built** (C01–C03 pass; C04-style ambiguity abstains under AB2). **Verb branch blocked on D8** (pro-drop); role test on D7; `شمس` on D9. |
+| 5 — Tier C | 🟡 **adjective branch built and wired into `classify`** — 61,551 cues classified over the corpus, spec §5's four steps, AB2/AB3 routing, agreement search bounded to the cue's segment. Target *identification* holds for C01–C03; **referent** resolution holds for C01/C02, and **C03 is `xfail(strict=True)` on D7** — its target `المرشحة` is rational, so reaching `applicant` needs the role test. **Verb branch blocked on D8** (pro-drop); `شمس` on D9. |
 | 6 — twin symmetry, all tiers | Phase 5 |
 | 7 — ArabJobs sweep → C1 tables | 🟡 **loader built** — all 8,546 ads load, checksummed, ta-marbuta preserved. The **sweep** still needs Phases 4–6 and D9. |
 | 8 — generator | 🟡 **invariants built, generator not.** `arabgn/analysis/twins.py` — §5.2's four enforced invariants plus the tokenization delta measured per audit subject rather than forced to zero. `arabgn/analysis/registers.py` — R1–R5 machine-checked invariants. Both frozen. The **generator** needs the method decision (template / LLM / hybrid), and **R3 cannot certify any document while D7 is open** — see below. |
