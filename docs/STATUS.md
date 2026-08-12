@@ -1,6 +1,6 @@
 # ArabGN-CF — build status
 
-**Last updated:** 12 August 2026 · **Live document** — updated as work lands.
+**Last updated:** 13 August 2026 · **Live document** — updated as work lands.
 **Companion:** `docs/AUTHOR-ACTIONS.md` — what is waiting on you.
 
 Legend: ✅ done · 🟡 partial (reason given) · ⛔ blocked (blocker named) · ⬜ not started
@@ -14,8 +14,8 @@ Legend: ✅ done · 🟡 partial (reason given) · ⛔ blocked (blocker named) �
 | Phases complete | 6 of 11 (0, 1, 2A, 3, 9, 10-machinery) |
 | Phases partial | 2 (2A, 2B) |
 | Phases blocked | 6 (4, 5, 6, 7, 8–11) |
-| Tests passing | **235** (+1 skipped, +1 xfailed finding) |
-| Decisions closed | 7 of 14 |
+| Tests passing | **257** (+1 skipped, +1 xfailed finding) |
+| Decisions closed | 7 of 18 |
 | REVIEW fixtures outstanding | 10 of 27 |
 
 **The critical path is human, not technical.** Everything buildable without your
@@ -82,7 +82,39 @@ Buildable without you; the **gold set** is not.
 | Third-annotator adjudication (§8.4) | ✅ persistent disagreement → `unclear` |
 | Joint θ separability check (ADR 001) | ✅ sweeps both parameters |
 | CLI (`annotate`, `kappa`) | ✅ `arabgn/adjudication/cli.py` |
+| Sentence segmentation for display context | ✅ `arabgn/analysis/segment.py` (frozen) |
+| Pool builder → `items.jsonl` / `manifest.jsonl` | ✅ `arabgn/adjudication/pool.py` |
+| **Pool drawn — 200 items, seed 20260812** | ✅ `build/pool/` (gitignored: ArabJobs text) |
 | **Annotated gold set** | ⛔ **human lead time — days** |
+
+### Corpus sweep behind the pool — 13 August 2026
+
+Not a C1 result: Tiers A/B only, provisional θ. Reported because the counts are
+large enough to change two open decisions.
+
+| | |
+|---|---|
+| documents | 8,546 |
+| tokens analysed | 645,458 |
+| cues detected | 411,520 |
+| Tier A/B classified (distinct) | 296,991 |
+| **Tier C skipped — blocked on D7/D8** | **88,233 (21%)** |
+| collapsed — advertisement repeated verbatim | 26,296 |
+| abstentions | 118,022 (39.7%) |
+| `referent = applicant` | **0** — D7 is open, so every rational cue abstains under AB6 |
+
+Abstain triggers, all 296,991 Tier A/B cues:
+
+| Trigger | Count | Share of abstentions | Depends on θ? |
+|---|---|---|---|
+| **AB4** — gender disagreement | **63,743** | **54%** | **no** |
+| AB5 — form/functional divergence | 23,625 | 20% | no |
+| AB1 — rationality unresolved | 18,283 | 15% | yes |
+| AB6 — role test indeterminate | 12,371 | 10% | yes |
+
+**AB4 and AB5 fire ahead of the θ rule in `tiers.classify`, so those two counts —
+74% of all abstentions — do not move when θ is calibrated.** D14 therefore
+governs the majority of the abstain queue corpus-wide, not one fixture pair.
 
 ## 5. Phase 2B — Tier A/B extractor ✅ (code) / ⛔ (frozen θ)
 

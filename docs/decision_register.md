@@ -24,6 +24,10 @@ and `docs/project-plan.md` (all eleven phases).
 | D12 Abstain trigger counts | Open — direction stated, **needs sign-off** | — |
 | D13 Determinism | Open — verified; becomes an asserted test | — |
 | **D14 AB4 is gender-asymmetric** | **Open, P0** — found 12 Aug by the Phase 3 harness; `docs/findings/001-ab4-is-gender-asymmetric.md` | — |
+| D15 Sentence-boundary set | Open — default applied, needs sign-off | — |
+| D16 Seniority derivation | Open — **blocks the seniority axis of §8.5 entirely** | — |
+| D17 Occupation column | Open — default applied, needs sign-off | — |
+| D18 Over-sample abstentions | **Closed** — ×3, matching the error-class weight | `008-oversample-abstentions.md` |
 
 ---
 
@@ -166,6 +170,44 @@ subject. *Blocks Phase 5 and fixtures C05–C07.*
 
 **D9. Institution-name list.** Spec §7.3. `شمس` in `جامعة عين شمس` returns
 `rat=r`. *Blocks Phase 7 accuracy.*
+
+**D15. Sentence-boundary set.** `arabgn/analysis/segment.py`. Spec §8.2 says an
+annotator sees "the full sentence", but nothing defines a sentence boundary in
+recruitment text, which is bullet-heavy and frequently unpunctuated. Default
+applied: line breaks, plus `. ! ? ؟ ؛ … •`; the Arabic comma `،` is deliberately
+excluded because ads use it inside a single list of requirements.
+
+Low stakes by construction — the disambiguator runs over the **whole document**,
+so this rule decides only how much text is quoted around a cue and cannot move a
+rationality mass. *Needs sign-off, blocks nothing.*
+
+**D16. Seniority derivation.** Register ID for the finding already recorded as
+`AUTHOR-ACTIONS.md` item 18 when the corpus loader landed. ArabJobs ships no
+seniority column, so `DocRecord.seniority` is `UNSPECIFIED` for every record and
+`CorpusStats.seniority_derived` is `False`.
+
+Confirmed downstream by the pool builder: **the seniority axis of architecture
+§8.5 cannot be reported at all**, and the seniority stratum of spec §8.3 is
+degenerate — it contributes nothing to the draw. A derivation from `job_title`
+would be a frozen, pre-registered artifact, so it is not invented in the loader.
+*Blocks part of C1's §8.5 table.*
+
+**D17. Occupation column.** `DocRecord.occupation` currently carries
+`profession` — 768 distinct values over 8,546 advertisements, averaging 11 per
+value. That is fine as a record field and **too sparse to stratify or tabulate
+on**: architecture §8.5 wants prevalence "by occupation", and 768 rows is not a
+table. `job_category` has 20 values and would be.
+
+The two are not exclusive — the loader could carry both, one for the record and
+one for the axis. What needs deciding is which one the paper means. *Needs
+sign-off; affects the §8.5 occupation axis, not the current draw, since
+occupation is not among the stratification fields.*
+
+**D18. Over-sample abstentions.** **Closed 13 August 2026 — ADR 008.** ×3,
+matching the weight already applied to the known error classes. The sample is now
+deliberately unrepresentative, which carries a re-weighting obligation for any
+prevalence figure generalised from annotated cues; the weight and the per-stratum
+draw are both recorded on `SamplingPlan` so the correction is recoverable.
 
 ### P2 — blocks the freeze
 

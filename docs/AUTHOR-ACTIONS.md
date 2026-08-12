@@ -130,6 +130,32 @@ that off. Trivial to confirm, and it is in the code now.
 
 ---
 
+### 8b. From building the annotation pool — 13 August
+
+**D16 gets a register ID.** This is item 18 above, confirmed downstream: with no
+seniority column, the spec §8.3 seniority stratum is not merely degenerate, it
+contributes nothing to the draw, and the §8.5 seniority axis cannot be produced.
+Unchanged in substance — you already knew.
+
+~~**D18 — abstentions are not being over-sampled.**~~ **Closed 13 Aug — ADR 008.**
+Architecture §8.1 says to over-sample abstentions and `sampling.py` did not, so
+62% of the draw was going to cues the tagger had already resolved. Now ×3,
+matching the error-class weight; the pool was redrawn and the split went from
+38% to 66% abstentions. One thing this puts on you: the sample is now
+deliberately unrepresentative, so any prevalence figure generalised from
+annotated cues must be re-weighted, and the paper has to say so.
+
+**D17 — which column is "occupation"?** `DocRecord.occupation` carries
+`profession`: 768 distinct values, ~11 advertisements each. Fine as a record
+field, too sparse for §8.5's "by occupation" table. `job_category` has 20 values.
+The loader could carry both; what needs deciding is which one the paper means.
+
+**D15 — the sentence-boundary set.** Line breaks plus `. ! ? ؟ ؛ … •`, with the
+Arabic comma `،` deliberately excluded. Low stakes: the disambiguator runs over
+the whole document, so this only decides how much text an annotator is shown.
+
+---
+
 ## 🟡 Start in parallel — human lead time
 
 ### 9. Recruit and brief annotators *(Phase 4 — the binding constraint)*
