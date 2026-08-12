@@ -23,6 +23,7 @@ __all__ = [
     "gender_disagreement",
     "form_divergence",
     "dominant_gender",
+    "selected_analysis",
 ]
 
 #: Spec §3.1 — included POS classes.
@@ -160,14 +161,33 @@ def form_divergence(gen: str | None, form_gen: str | None) -> bool:
     return gen != form_gen
 
 
-def dominant_gender(candidates: Sequence[CandidateAnalysis]) -> Gender | None:
-    """The gender carried by the highest-scoring gendered candidate.
+def selected_analysis(
+    candidates: Sequence[CandidateAnalysis],
+) -> CandidateAnalysis | None:
+    """The single analysis a cue's scalar fields are read from.
 
-    Ties are broken by ``m`` before ``f`` — declared rather than left to sort
-    stability, so the result cannot vary with candidate ordering (prohibition 6).
+    Architecture §4.5 types ``gen``, ``form_gen`` and ``morph_class`` as scalars
+    while ``rat_candidates`` is a set, so exactly one candidate has to be
+    nominated as the source of the scalars. Naming that choice once, here, is what
+    keeps ``gen`` and ``form_gen`` drawn from the **same** analysis: AB5 compares
+    them, and comparing a ``gen`` from one reading against a ``form_gen`` from
+    another would manufacture divergences that no single analysis asserts.
+
+    The selection is the highest-scoring candidate that carries a gender, with
+    ties broken ``m`` before ``f``. The tie-break is declared rather than left to
+    sort stability, so the result cannot vary with candidate ordering
+    (prohibition 6).
+
+    Returns ``None`` when no candidate carries a gender — such a token is not a
+    cue (spec §2), so callers have nothing to record.
     """
     gendered = [c for c in candidates if carries_gender(c.gen)]
     if not gendered:
         return None
-    best = max(gendered, key=lambda c: (c.score, c.gen == "m"))
-    return Gender(best.gen)
+    return max(gendered, key=lambda c: (c.score, c.gen == "m"))
+
+
+def dominant_gender(candidates: Sequence[CandidateAnalysis]) -> Gender | None:
+    """The gender carried by the highest-scoring gendered candidate."""
+    best = selected_analysis(candidates)
+    return None if best is None else Gender(best.gen)
