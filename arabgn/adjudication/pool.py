@@ -13,17 +13,28 @@ Turns the corpus into two files:
     annotator.** Keeping it separate is what makes the leak require a deliberate
     join rather than a careless glance.
 
-Scope: Tiers A and B only
--------------------------
-Cues routing to Tier C — ``verb`` and ``adj``, roughly a quarter of all cues
-measured on real advertisements — are counted and skipped, because
-:func:`arabgn.analysis.tiers.classify` raises on them pending registers D7 (role
-test) and D8 (pro-drop). The report states how many were dropped, so the pool
-never reads as covering the corpus when it covers three-quarters of it.
+Scope: Tiers A, B, and Tier C's adjective branch
+------------------------------------------------
+**Verbs are counted and skipped** — the subject may be pro-dropped and the
+default by document type is register D8, unsettled. That is the branch carrying
+``تخرجت`` and ``عملت``, the markings the paper is centrally about, so the report
+states the number rather than letting the pool read as complete.
+
+Adjectives resolve. Tier C inherits rationality from the agreement target, and
+the role test governs *rational* targets only (spec §5.1) — so ``خبرة واسعة``
+resolves to ``non_applicant`` with no author decision involved, and that is the
+common case in real advertisements.
+
+The agreement search is bounded to the cue's **segment**. ``punc`` is skippable
+when looking back for a head, so an unbounded search would let a sentence-initial
+adjective attach to the previous sentence's noun. Tokens are grouped by host
+segment and the resolver is handed only its own segment's, which makes the bound
+structural rather than a rule it has to respect.
 
 No cue in this pool can carry ``referent = applicant``
 ------------------------------------------------------
-D7 is open, so the role test is indeterminate for every rational cue and they all
+D7 is open, so the role test is indeterminate for every rational cue — in Tier A
+directly, and in Tier C whenever the agreement target is rational. All of them
 abstain under AB6 (spec §5.1). That is not a defect in this module: it is what an
 unresolved D7 *means*, made visible. The annotation is still worth doing — the
 human labels are what D7 needs — but nobody should read the resulting label
@@ -44,11 +55,16 @@ from __future__ import annotations
 import hashlib
 import json
 import random
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
 
 from arabgn.adjudication.items import blind
+from arabgn.analysis.agreement_target import (
+    TargetCandidate,
+    VerbBranchNotImplemented,
+)
 from arabgn.analysis.cues import CandidateAnalysis, selected_analysis
 from arabgn.analysis.sampling import (
     DEFAULT_ABSTAIN_OVERSAMPLE,
@@ -57,7 +73,7 @@ from arabgn.analysis.sampling import (
 )
 from arabgn.analysis.segment import segment, segment_for_span
 from arabgn.analysis.thresholds import ThresholdConfig
-from arabgn.analysis.tiers import TIER_C_POS, TierCNotImplemented, classify
+from arabgn.analysis.tiers import classify
 from arabgn.contracts import (
     DocRecord,
     DocType,
@@ -133,15 +149,44 @@ def extract_cues(
     cues: list[TaggedCue] = []
     skipped = {"tier_c": 0, "no_segment": 0, "form_gen_absent": 0}
 
+    # Tier C searches backwards for an agreement target, and `punc` is skippable,
+    # so an unbounded search would let a sentence-initial adjective attach to the
+    # last noun of the *previous* sentence. Grouping tokens by host segment bounds
+    # the search structurally: the resolver cannot reach past what it is handed.
+    #
+    # This makes segmentation load-bearing for a measurement, not only for
+    # display — see the note in `arabgn.analysis.segment` and register D15.
+    by_segment: dict[int, list] = defaultdict(list)
+    position: dict[int, tuple[int, int]] = {}
+    for token in analysed:
+        host = segment_for_span(segments, token.char_start, token.char_end)
+        if host is None:
+            continue
+        index = segments.index(host)
+        position[id(token)] = (index, len(by_segment[index]))
+        by_segment[index].append(token)
+
+    def targets_for(segment_index: int) -> tuple[TargetCandidate, ...]:
+        return tuple(
+            TargetCandidate(
+                index=offset,
+                token=member.token,
+                pos=member.top_pos,
+                gen=(
+                    member.gender().value
+                    if member.gender() is not None
+                    else None
+                ),
+                candidates=member.candidates,
+            )
+            for offset, member in enumerate(by_segment[segment_index])
+        )
+
     for token in analysed:
         if not token.is_cue():
             continue
 
         pos = token.top_pos
-        if pos in TIER_C_POS:
-            skipped["tier_c"] += 1
-            continue
-
         selected = selected_analysis(token.candidates)
         if selected is None:  # not a cue; is_cue() already implies otherwise
             continue
@@ -163,6 +208,7 @@ def extract_cues(
             skipped["form_gen_absent"] += 1
             form_gen = selected.gen
 
+        segment_index, offset = position[id(token)]
         try:
             classification = classify(
                 token.token,
@@ -172,10 +218,16 @@ def extract_cues(
                 gen=selected.gen,
                 form_gen=selected.form_gen,
                 # D7 is open. `None` is "indeterminate" -> AB6, never a default to
-                # applicant (spec §5.1).
+                # applicant (spec §5.1). Applies to Tier A and to Tier C cues
+                # whose agreement target is rational.
                 role_test_passes=None,
+                cue_index=offset,
+                tokens=targets_for(segment_index),
             )
-        except TierCNotImplemented:
+        except VerbBranchNotImplemented:
+            # Verbs only. The subject may be pro-dropped and the default by
+            # document type is register D8 — the branch carrying تخرجت / عملت,
+            # which is what the paper is centrally about.
             skipped["tier_c"] += 1
             continue
 
@@ -207,7 +259,7 @@ def extract_cues(
                 tier=classification.tier,
                 referent=classification.referent,
                 abstain_reason=classification.abstain_reason,
-                head_token=None,
+                head_token=classification.head_token,
                 toolkit_version=toolkit_version,
                 db_version=db_version,
             )

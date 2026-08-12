@@ -178,9 +178,15 @@ recruitment text, which is bullet-heavy and frequently unpunctuated. Default
 applied: line breaks, plus `. ! ? ؟ ؛ … •`; the Arabic comma `،` is deliberately
 excluded because ads use it inside a single list of requirements.
 
-Low stakes by construction — the disambiguator runs over the **whole document**,
-so this rule decides only how much text is quoted around a cue and cannot move a
-rationality mass. *Needs sign-off, blocks nothing.*
+**Raised in stakes 13 August 2026.** When Tier C's adjective branch was wired,
+the agreement search was bounded to the cue's segment — `punc` is skippable when
+looking back for a head, so an unbounded search lets a sentence-initial adjective
+attach to the previous sentence's noun. A boundary in the wrong place therefore
+changes which head an adjective reaches, and so changes a **Tier C label**.
+
+No rationality mass moves, and Tiers A and B are unaffected — the disambiguator
+still runs over the whole document. But this is no longer a display-only choice.
+*Needs sign-off; affects Tier C labels.*
 
 **D16. Seniority derivation.** Register ID for the finding already recorded as
 `AUTHOR-ACTIONS.md` item 18 when the corpus loader landed. ArabJobs ships no

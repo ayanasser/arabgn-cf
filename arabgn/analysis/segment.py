@@ -11,14 +11,20 @@ document, so every cue is analysed with the maximum context available. Verified
 855-token advertisement with no truncation and no empty candidate lists, so there
 is no length ceiling to segment around.
 
-That separation is deliberate. Segmentation rules are a judgement call, and
-routing them through the disambiguator would make every rationality mass in the
-study depend on where a full stop was guessed. Here the rule decides only how
-much text is quoted around a cue, so getting it slightly wrong costs an annotator
-some context and cannot move a measurement.
+That separation is deliberate. Routing segments through the disambiguator would
+make every rationality mass in the study depend on where a full stop was guessed.
 
-**The boundary set is not author-approved** — see register D15. It is a stated
-default, not a settled decision.
+**But segmentation is not display-only, and this claim was weakened on 13 August
+2026.** When Tier C's adjective branch was wired up, the agreement search was
+bounded to the cue's segment — ``punc`` is skippable when looking back for a
+head, so an unbounded search lets a sentence-initial adjective attach to the
+previous sentence's noun. A boundary in the wrong place therefore changes which
+head an adjective can reach, and so changes a Tier C label.
+
+It does not change any rationality mass, and it cannot affect Tiers A or B. But
+"cannot move a measurement" is no longer true, and **register D15 is
+correspondingly more than a formality** — the boundary set is a stated default,
+not a settled decision.
 
 Boundary rule
 -------------

@@ -23,7 +23,7 @@ from arabgn.contracts import (
     Referent,
     Seniority,
     Tier,
-)
+)  # noqa: F401 — Tier and AbstainTrigger are used by the Tier C assertions
 from arabgn.tagger.analyzer import AnalysedToken
 
 # Provisional θ from docs/theta-sweep.md §3 — the most robust point over the nine
@@ -78,14 +78,19 @@ def record(text, doc_id="aj-test", country=Country.EG):
 KHIBRA = [cand(0.95, "noun", "i"), cand(0.05, "noun", "i")]
 # `المرشحة` — rat=r dominant. Rational, so the role test applies (spec §5.1).
 MURASHAHA = [cand(0.90, "noun", "r"), cand(0.10, "noun", "i")]
-# `واسعة` — an adjective, i.e. Tier C (spec §5).
+# `واسعة` — an adjective, i.e. Tier C (spec §5). Carries gender by agreement, so
+# `rat = n` and its own mass says nothing about reference.
 WASIA = [cand(0.99, "adj", "n")]
+# `تخرجت` — a verb. Tier C via the branch D8 still blocks.
+VERB = [cand(0.99, "verb", "n")]
 
 
-def test_tier_c_cues_are_skipped_and_counted(caplog):
-    """Architecture §4.3 calls Tier C the core of C1; it is blocked on D7/D8.
+def test_tier_c_adjectives_resolve_by_inheritance():
+    """Spec §5 Tier C, adjective branch — fixture C01's construction.
 
-    Skipping silently would let the pool read as covering the corpus.
+    ``واسعة`` inherits ``non_applicant`` from ``خبرة`` (rat=i). No author
+    decision is involved: the role test governs *rational* targets only, so an
+    irrational one resolves outright.
     """
     text = "خبرة واسعة"
     doc = record(text)
@@ -96,8 +101,59 @@ def test_tier_c_cues_are_skipped_and_counted(caplog):
     cues, skipped = extract_cues(
         doc, analysed, THETA, toolkit_version="1.6.0", db_version="calima-msa-r13"
     )
+    assert skipped["tier_c"] == 0
+    assert [c.token for c in cues] == ["خبرة", "واسعة"]
+
+    adjective = cues[1]
+    assert adjective.tier is Tier.C
+    assert adjective.referent is Referent.NON_APPLICANT
+    assert adjective.head_token == "خبرة"
+
+
+def test_tier_c_verbs_are_skipped_and_counted():
+    """The verb branch stays blocked on D8 (pro-drop), and that must be visible.
+
+    Skipping silently would let the pool read as covering the corpus when it
+    omits تخرجت / عملت — the markings the paper is centrally about.
+    """
+    text = "تخرجت من الجامعة"
+    doc = record(text)
+    analysed = (
+        token("تخرجت", 0, VERB, index=0),
+        token("من", 6, [cand(1.0, "prep", "n")], index=1),
+        token("الجامعة", 9, KHIBRA, index=2),
+    )
+    cues, skipped = extract_cues(
+        doc, analysed, THETA, toolkit_version="1.6.0", db_version="calima-msa-r13"
+    )
     assert skipped["tier_c"] == 1
-    assert [c.token for c in cues] == ["خبرة"]
+    assert "تخرجت" not in [c.token for c in cues]
+
+
+def test_the_agreement_search_cannot_cross_a_sentence_boundary():
+    """Punctuation is skippable when looking back for a head, so an unbounded
+    search would let a sentence-initial adjective attach to the previous
+    sentence's noun.
+
+    Tokens are grouped by host segment so the resolver cannot reach past what it
+    is handed. ``واسعة`` here opens its own sentence and must abstain under AB2,
+    not inherit from ``خبرة``.
+    """
+    text = "خبرة كبيرة.\nواسعة جدا"
+    doc = record(text)
+    analysed = (
+        token("خبرة", 0, KHIBRA, index=0),
+        token("كبيرة", 5, WASIA, index=1),
+        token("واسعة", text.index("واسعة"), WASIA, index=2),
+    )
+    cues, _ = extract_cues(
+        doc, analysed, THETA, toolkit_version="1.6.0", db_version="calima-msa-r13"
+    )
+    second_sentence = [c for c in cues if c.sentence_context == "واسعة جدا"]
+    assert second_sentence, [c.sentence_context for c in cues]
+    assert second_sentence[0].referent is Referent.ABSTAIN
+    assert second_sentence[0].abstain_reason is AbstainTrigger.AB2
+    assert second_sentence[0].head_token is None
 
 
 def test_rational_cues_abstain_under_ab6_while_d7_is_open():
