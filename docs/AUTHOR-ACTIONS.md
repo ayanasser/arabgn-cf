@@ -180,6 +180,8 @@ circumstance in which I touch a fixture.**
 | 15 | Choose the twin-CV generation method (template / LLM / hybrid) | Phase 8 |
 | 16 | Choose the Arabic encoder audit subject | Phase 10 |
 | 17 | Resolve the §11 positioning issue — does C1 cover CVs or only ads? | Draft framing |
+| 18 | **Seniority taxonomy.** ArabJobs ships no seniority column, so every record loads `UNSPECIFIED`. Architecture §3.2 says "from source metadata" but §3.1 lists the taxonomy as "Not started". Spec §8.3 stratifies adjudication *by seniority* — that stratum is currently degenerate | Adjudication sampling; C1 breakdown by seniority |
+| 19 | **Decide how to use ArabJobs' own `gender` column** (male 4,767 / neutral 2,405 / female 1,374). Currently loaded for *comparison only* and never fed to the tagger, since consuming it would make C1 circular. It is a genuine convergent-validity check if you want one | C1 framing |
 
 ---
 
