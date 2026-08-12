@@ -84,17 +84,17 @@ Buildable without you; the **gold set** is not.
 | CLI (`annotate`, `kappa`) | ✅ `arabgn/adjudication/cli.py` |
 | **Annotated gold set** | ⛔ **human lead time — days** |
 
-## 5. Phase 2B — Tier A/B extractor 🟡
+## 5. Phase 2B — Tier A/B extractor ✅ (code) / ⛔ (frozen θ)
 
 | Item | Status |
 |---|---|
-| Disambiguator wrapper, `top=100` | ⬜ |
-| Determinism assertion (D13) | ⬜ |
-| Cue detection + POS filter (§3.1) | ⬜ |
-| Probability-mass rationality rule (§4.2) | ⬜ |
-| θ sweep over fixtures | ⬜ |
-| Tier A/B classification (§5) | ⬜ |
-| Tier C → `NotImplementedError` | ⬜ |
+| Disambiguator wrapper, `top=100` | ✅ rejects any other `top` |
+| Determinism assertion (D13) | ✅ 3 runs byte-identical, asserted in tests |
+| Cue detection + POS filter (§3.1) | ✅ N01/N02 pass against the real model |
+| Probability-mass rationality rule (§4.2) | ✅ reproduces ADR 001 to <0.001 |
+| θ sweep over fixtures | ✅ `docs/theta-sweep.md` |
+| Tier A/B classification (§5) | ✅ incl. AB1, AB4, AB5, AB6 |
+| Tier C → `NotImplementedError` | ✅ names cue, POS, D7 and D8 |
 | **Frozen θ values** | ⛔ Phase 4 |
 
 ## 6. Phase 3 — Twin symmetry (provisional) ⬜
@@ -146,5 +146,6 @@ Findings from each pass are recorded in the review log below.
 
 | Item | Pass 1 findings | Pass 2 findings |
 |---|---|---|
+| Phase 2B tagger | `rationality_mass` used `+` to sum float scores — **not associative**, so mass differed in the last bits by candidate order (0.5625 vs 0.5625000000000001). A real prohibition-6 violation: a mass near θ could resolve differently, and serialised output would not be byte-stable so the freeze hash would not reproduce. **Fixed**: `math.fsum`, exactly-rounded. Also `blind()` hardcoded `DocType.AD`. | `form_divergence` / `dominant_gender` missing from `__all__`; unused imports. **Fixed**. θ sweep over 9 real fixtures shows the feasible region is 2,249 grid points, **not** the ~7-point window ADR 001 estimated from three cases — risk is lower than recorded. |
 | Phase 1 normalisation | Guard baselined on raw input; NFC composition flagged as a violation. **Fixed** — baseline is now the NFC form. | — |
 | Phase 2A adjudication | (1) Over-sampling weighted the *whole stratum* containing an error-class cue, not the class — a `مطلوبة` cue gave 9 neighbours 3× weight too. **Fixed**: error class is now part of the stratum key. (2) `adjudicate` missing from `__all__`. (3) `id()` used for test ids — a memory address, nondeterministic. Both **fixed**. | `strata_fields` declared 5 names while keys carried 6 elements, so keys could not be reconstructed positionally. **Fixed**: `error_class` appended. Verified over-sampling now draws §7.1 at 2.22× base rate (was diffuse). |

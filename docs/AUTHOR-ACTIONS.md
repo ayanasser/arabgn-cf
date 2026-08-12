@@ -78,7 +78,25 @@ accept and report.
 
 Affects fixture E03.
 
-### 6. D12 — Sign off the abstain trigger count
+### 6. NEW — spec §4.2 says "log-probabilities" but the evidence uses `score`
+
+Measured on `حاصلة` 12 Aug 2026:
+
+| Method | mass(i) | mass(r) | Reproduces ADR 001? |
+|---|---|---|---|
+| Σ candidate `score` | 0.6757 | 0.3243 | **yes** (ADR: 0.676 / 0.324) |
+| Σ `exp(pos_lex_logprob)` | 0.7632 | 0.2368 | no |
+
+The implementation uses `score`, because that reproduces your calibration
+evidence. The two are **not interchangeable**: θ is calibrated against these
+numbers and frozen into the pre-registration, so the method is part of the frozen
+definition.
+
+**Action:** amend spec §4.2 to say "candidate scores", or confirm log-probabilities
+are intended and re-derive ADR 001's evidence under them. Detail in
+`docs/theta-sweep.md` §5.
+
+### 7. D12 — Sign off the abstain trigger count
 
 Architecture §4.4 listed four triggers; spec §6 lists six. I applied the spec's
 six, since the register states spec is authoritative — but you have not signed
@@ -88,7 +106,7 @@ that off. Trivial to confirm, and it is in the code now.
 
 ## 🟡 Start in parallel — human lead time
 
-### 7. Recruit and brief annotators *(Phase 4 — the binding constraint)*
+### 8. Recruit and brief annotators *(Phase 4 — the binding constraint)*
 
 Architecture §9: adjudication is "the only component with human lead time" and
 "cannot be compressed at the end." ADR 001 made it **upstream** of finishing the
@@ -103,7 +121,7 @@ Needed:
 
 The tooling will be ready before the people are. **Start recruiting now.**
 
-### 8. The ten REVIEW fixtures
+### 9. The ten REVIEW fixtures
 
 Each is an open question being skipped, not a passing test.
 
