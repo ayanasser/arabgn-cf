@@ -44,11 +44,14 @@ FROZEN_SOURCES: tuple[str, ...] = (
     "arabgn/analysis/blinding.py",
     "arabgn/analysis/cues.py",
     "arabgn/analysis/freeze.py",
+    "arabgn/analysis/inference.py",
+    "arabgn/analysis/reporting.py",
     "arabgn/analysis/sampling.py",
     "arabgn/analysis/symmetry.py",
     "arabgn/analysis/text.py",
     "arabgn/analysis/thresholds.py",
     "arabgn/analysis/tiers.py",
+    "arabgn/analysis/variance.py",
 )
 
 LOCKFILE = "uv.lock"

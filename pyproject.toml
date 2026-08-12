@@ -13,6 +13,13 @@ dependencies = [
     # Exposes gen, form_gen and rat as separate fields, which the design depends on.
     # NOTE: installing this does NOT fetch model data. See CLAUDE.md setup.
     "camel-tools==1.6.0",
+
+    # Phase 10 estimators. Already present in uv.lock transitively via
+    # camel-tools, so declaring them changes no resolved version — but a direct
+    # dependency is still a project decision (prohibition 5). Approved by the
+    # author, 12 Aug 2026.
+    "numpy>=2.0,<3.0",
+    "scipy>=1.15,<2.0",
 ]
 
 [project.optional-dependencies]
