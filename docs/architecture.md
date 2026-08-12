@@ -89,11 +89,12 @@ Two scoring backends exist behind one interface:
 
 ### 3.2 Corpus loader — contract
 
-Input: raw ArabJobs distribution. Output: a normalised record per advertisement.
+Input: raw ArabJobs distribution. Output: a normalised record per document.
 
 ```
-AdRecord
-  ad_id            str    stable hash of source text
+DocRecord
+  doc_id           str    stable hash of source text
+  doc_type         enum   ad | cv
   text_raw         str    unmodified source
   text_norm        str    Unicode-normalised, diacritics preserved
   country          enum   EG | JO | SA | AE
@@ -101,6 +102,12 @@ AdRecord
   seniority        enum   entry | mid | senior | unspecified
   source_checksum  str
 ```
+
+> **Amended 12 Aug 2026 — ADR 003 (register D3).** Was `AdRecord` / `ad_id` with
+> no `doc_type`. Linguistic spec §5.2 requires a document-type flag (pro-drop
+> defaults differ between ad and CV), every fixture carries one, and Tier C is
+> undefined without it. The name changed because the contract holds CVs as well
+> as advertisements.
 
 Normalisation rules (must be frozen and tested): Unicode NFC; alef/ya/ta-marbuta
 normalisation is not applied — ta-marbuta is the primary feminine marker and
@@ -159,30 +166,49 @@ with only Tiers A and B will miss most of what the paper is about.
 
 ### 4.4 Abstain policy
 
-Abstain fires on any of:
+Abstain fires on any of the six triggers enumerated in `docs/linguistic-spec.md`
+§6, which is authoritative:
 
-- **Rationality disagreement** — candidate analyses disagree on `rat` (Tier B).
-- **Unresolved agreement target** — Tier C, no head noun recoverable.
-- **Gender disagreement** — candidate analyses disagree on `gen` after
+- **AB1 — Rationality does not resolve** under the calibrated probability-mass
+  rule of spec §4.2 (Tier B).
+- **AB2 — Agreement target not identifiable** (Tier C, no head noun recoverable).
+- **AB3 — Agreement target itself abstains** (Tier C).
+- **AB4 — Gender disagreement** — candidate analyses disagree on `gen` after
   disambiguation.
-- **Form/functional divergence** — `gen` ≠ `form_gen`, flagged for review.
+- **AB5 — Form/functional divergence** — `gen` ≠ `form_gen`, flagged for review.
+- **AB6 — Role test indeterminate** for a rational cue (Tier A, spec §5.1).
 
-The first trigger is derived from the morphology database rather than a tuned
-threshold, which makes it defensible in the paper without calibration data.
+AB1 depends on `θ_high` / `θ_low`, calibrated once against the gold set, then
+frozen and declared in the pre-registration. The gold set is therefore *upstream*
+of completing the Tier A/B extractor.
+
+> **Amended 12 Aug 2026 — ADR 001 (register D1).** This section previously listed
+> four triggers and claimed the first was "derived from the morphology database
+> rather than a tuned threshold, which makes it defensible in the paper without
+> calibration data." That claim was an authoring error about trigger 1 (= AB1),
+> confirmed by the author, and is withdrawn. Both threshold-free formulations were
+> tested and both fail on settled fixtures: raw candidate-set membership abstains
+> on A01 and A02, the two cleanest positives; a rank-based rule resolves B01
+> `حاصلة` to irrational, the exact error AB1 exists to catch. See ADR 001 for the
+> measurements and the joint (θ_high, θ_low) feasible region.
+>
+> The trigger list was also extended from four to six to match spec §6, which
+> already carried AB3 and AB6 (register D12).
 
 ### 4.5 Output contract
 
 ```
 TaggedCue
   cue_id            str
-  ad_id             str
+  doc_id            str
   token             str
   char_span         (int, int)
   sentence_context  str
   pos               str
+  morph_class       enum | null    linguistic class; see ADR 002
   gen               enum   m | f
   form_gen          enum   m | f
-  rat_candidates    set    subset of {r, i, n}
+  rat_candidates    frozenset      subset of {r, i, n}; serialised sorted
   tier              enum   A | B | C
   referent          enum   applicant | non_applicant | ABSTAIN
   abstain_reason    enum | null
@@ -190,6 +216,22 @@ TaggedCue
   toolkit_version   str
   db_version        str
 ```
+
+> **Amended 12 Aug 2026.** Three changes:
+>
+> - `ad_id` → `doc_id` (ADR 003, register D3), following the `DocRecord` rename.
+> - `morph_class` added (ADR 002, register D2). Tier membership is *mechanism*-
+>   based and tracks CAMeL POS, which splits active participles across tiers by
+>   lexeme — `حاصلة` is `noun` → Tier B while `المسؤولة` is `adj` → Tier C.
+>   Recording linguistic class separately lets §8.1 be reported as a tier ×
+>   morph-class cross-tabulation instead of stratifying by a lexicon artifact.
+>   **Conditional** on the feasibility probe in
+>   `docs/decisions/002-appendix-morph-class-feasibility.md`.
+> - `rat_candidates` typed `frozenset` and serialised in sorted order.
+>   Prohibition 6 forbids iterating a `set` for output; the original `set` typing
+>   would have made output order implementation-defined (register D13).
+>
+> **Tier is never to be read as a linguistic claim** in any output or table.
 
 ### 4.6 Known limitation to report
 
@@ -391,10 +433,29 @@ Human-adjudicated cue labels.
 | F1 | Harmonic mean | Report |
 | Abstention rate | Abstains / total cues | Report; high is acceptable if precision on non-abstained is high |
 | Inter-annotator agreement | Cohen's κ on double-annotated subset | ≥ 0.7 before adjudication is usable |
-| Tier-wise breakdown | All above, split by Tier A / B / C | Required — Tier C will be weakest and hiding that is not defensible |
+| Tier-wise breakdown | All above, split by Tier A / B / C **× morphological class** | Required — Tier C will be weakest and hiding that is not defensible |
 
 **Sampling plan.** Stratify by country, seniority, POS class, and tier.
 Over-sample abstentions and the مطلوبة error class. Double-annotate a subset for κ.
+
+**θ separability check.** Before `θ_high` / `θ_low` are committed to the
+pre-registration, sweep them **jointly** over the gold set and confirm a feasible
+region exists. ADR 001 shows the region is a disjunction with two independent
+routes, each roughly seven points wide; a sweep over `θ_high` alone can report
+"no feasible θ" while a valid `θ_low` region sits unexamined. If clean rational
+cases and genuinely ambiguous ones overlap in probability mass, no θ exists and
+AB1 needs redesigning rather than tuning. **This gate can fail.**
+
+> **Amended 12 Aug 2026 — ADR 002 (register D2).** Tier-wise breakdown became a
+> cross-tabulation. Tier tracks the resolution *mechanism*, which follows CAMeL
+> POS and therefore splits active participles by lexeme rather than by linguistic
+> property. Reported as tier alone, §8.1 would stratify by an artifact of the
+> CAMeL lexicon. The cross-tabulation turns that dependency into a measured
+> quantity, which also serves the §7 error-class reporting. Conditional on the
+> `morph_class` feasibility probe; falls back to tier-alone with a stated
+> limitation if the probe returns no-go.
+>
+> The separability paragraph is new, per ADR 001 (register D1).
 
 ### 8.2 Design-enforced invariants — not observed, asserted
 
@@ -527,6 +588,21 @@ environment; it is not a project dependency and does not enter the lockfile.
 |---|---|---|
 | SE formula superscripts (§7.3) | PDF flattens `SE²`/`σ²` to `SE2`/`σ2` | Matched against the same formula in `NILE2026 - SS2 Proposal .pdf` §C3 |
 | Arabic tokens (§4.2, §4.3, §4.6, §5.2, §8.1) | Stored in visual (reversed) order; U+06BE (ARABIC LETTER HEH DOACHASHMEE) substituted for U+0647 (ARABIC LETTER HEH) | Each token reversed and re-mapped, then compared character-for-character against the independently authored `docs/linguistic-spec.md` and `tests/fixtures/tagger_fixtures.yaml` |
+
+### Post-conversion amendments
+
+Everything above §12 is converted text **except** the changes listed here, each
+marked inline with a dated blockquote. A reviewer can therefore separate the
+original design document from decisions taken after it.
+
+| § | Change | ADR | Register |
+|---|---|---|---|
+| 3.2 | `AdRecord` → `DocRecord`; `ad_id` → `doc_id`; `doc_type` added; "per advertisement" → "per document" | 003 | D3 |
+| 4.4 | Threshold-free claim withdrawn; trigger list 4 → 6 | 001 | D1, D12 |
+| 4.5 | `ad_id` → `doc_id`; `morph_class` added; `rat_candidates` → `frozenset` | 003, 002 | D3, D2, D13 |
+| 8.1 | Tier-wise breakdown → tier × morph-class cross-tab; θ separability check added | 002, 001 | D2, D1 |
+
+### Arabic reconstruction
 
 The ten Arabic tokens affected — المهندسة، سنوات، الشركة، خبرة، حاصلة، واسعة،
 تخرجت، مطلوبة، مهندسة، حاصل — all matched their spec spellings exactly, ta-marbuta

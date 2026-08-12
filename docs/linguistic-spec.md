@@ -104,7 +104,7 @@ returns `rat=i`. The correct reading is present in the candidate set
 Using top-1 would misclassify this cue *and* would prevent the Tier B abstain from
 ever firing, because a single candidate can never disagree with itself.
 
-### 4.2 Why not raw candidate-set membership either ⚠
+### 4.2 Why not raw candidate-set membership either
 
 Raw membership is too permissive. Verified:
 
@@ -117,8 +117,8 @@ Raw membership is too permissive. Verified:
 If any `r` in the candidate set triggers "possibly applicant-referring", nearly
 every token qualifies and the abstain rate approaches 100%.
 
-**Author decision required.** Recommended rule: compute the probability mass of
-each rationality value across candidates using the analyses' log-probabilities,
+**SETTLED 12 August 2026 — ADR 001 (register D1).** Compute the probability mass
+of each rationality value across candidates using the analyses' log-probabilities,
 and apply:
 
 - mass(`r`) ≥ θ_high and mass(`i`) < θ_low → rational
@@ -128,9 +128,68 @@ and apply:
 θ_high and θ_low are calibrated once against the gold set, then frozen. They must
 be declared in the pre-registration.
 
+Both threshold-free alternatives were tested and both fail on **settled**
+fixtures, in opposite directions:
+
+| Formulation | Failure |
+|---|---|
+| Raw candidate-set membership | Abstains on A01 `المرشحة` and A02 `مهندس` — the two cleanest positives |
+| Rank-based (top-1 vs top-2) | Resolves B01 `حاصلة` to irrational — the exact error AB1 exists to catch |
+
+Architecture §4.4's former claim that this trigger needs no calibration data has
+been withdrawn as an authoring error.
+
+#### 4.2.1 Calibrating θ — the separability gate
+
+The feasible region is **two-dimensional and disjunctive**. Against the measured
+masses (`خبرة` i=0.904; `المرشحة` r=0.747/i=0.254; `حاصلة` i=0.676/r=0.324):
+
+```
+θ_high ∈ (0.676, 0.747]     OR     θ_low ∈ (0.254, 0.324]
+```
+
+Two independent routes, each roughly seven points wide. **Sweep both parameters
+jointly.** A θ_high-only sweep can conclude "no feasible θ exists" while a valid
+θ_low region sits unexamined.
+
+Before θ is committed to the pre-registration, confirm on the gold set that the
+mass distributions of clean rational cases and genuinely ambiguous cases do not
+overlap. If they do, no θ exists and **AB1 must be redesigned, not tuned.** This
+gate can fail.
+
+#### 4.2.2 Context does not disambiguate `حاصلة`
+
+`حاصلة` returns mass(`r`) = 0.324 in ad context and 0.330 in CV context. Two very
+different contexts move the minority reading by six thousandths.
+
+This is evidence that **abstention is the correct behaviour** for this lexeme
+rather than an instrument shortcoming, and should be reported as a finding rather
+than filed under limitations.
+
 ---
 
 ## 5. Referent classification — the three tiers
+
+> **Tiers are mechanism-based, not linguistic — ADR 002 (register D2), 12 Aug
+> 2026.** A tier names *how* reference is resolved: lexically (A), by abstaining
+> on lexical ambiguity (B), or by syntactic inheritance (C). It is **not** a claim
+> about the linguistic category of the cue, and must never be read as one in any
+> output or table.
+>
+> Tier membership follows CAMeL POS, which splits active participles across tiers
+> by lexeme rather than by property:
+>
+> | Token | Category | POS | Tier |
+> |---|---|---|---|
+> | حاصلة، حاصل، حاصلا، وحاصلة | active participle | `noun` | B |
+> | المتقدم، المسؤولة، مسؤول، العاملة | active participle | `adj` | C |
+> | خريجة، المرشحة | agentive noun | `noun` | A |
+>
+> Linguistic class is therefore recorded **separately**, in `TaggedCue.morph_class`,
+> and §8.1 of the architecture is reported as a tier × morph-class
+> cross-tabulation. This also means `rat_candidates` differs by path — `المسؤولة`
+> → `{i,n,r}` via `adj`, `المرشحة` → `{i,r}` via `noun` — so the extra `n` mass
+> must be accounted for when applying §4.2 across tiers.
 
 ### Tier A — lexical resolution
 
@@ -310,13 +369,22 @@ is recorded as `unclear` and reported, not forced to a label.
 
 ## 9. Open items requiring author decision
 
-| § | Item |
-|---|---|
-| 3.2 | Enclitic pronouns as separate cues |
-| 4.2 | θ_high / θ_low and the probability-mass rule |
-| 5.1 | The role test and its closed list of non-applicant relations |
-| 5.2 | Pro-drop default by document type |
-| 7.3 | Institution-name list source |
+| § | Item | Register | Status |
+|---|---|---|---|
+| 4.2 | The probability-mass rule | D1 | **Settled** 12 Aug 2026 — ADR 001 |
+| 5 | Tier membership vs linguistic class | D2 | **Settled** 12 Aug 2026 — ADR 002 |
+| 3.2 | Enclitic pronouns as separate cues | D6 | Open — blocks Phase 2B scope |
+| 5.1 | The role test and its closed list of non-applicant relations | D7 | Open — blocks Phase 5 |
+| 5.2 | Pro-drop default by document type | D8 | Open — blocks Phase 5, fixtures C05–C07 |
+| 7.3 | Institution-name list source | D9 | Open — blocks Phase 7 accuracy |
+| 4.2 | θ_high / θ_low **values** | D1 | Open — calibrated at Phase 4, not choosable now |
 
-None of these can be settled by an implementer. All must be resolved and frozen
-before confirmatory analysis.
+None of the open items can be settled by an implementer. All must be resolved and
+frozen before confirmatory analysis.
+
+Note that ADR 001 settles the *rule*; the θ **values** remain open by design and
+are calibrated once against the gold set at the Phase 4 gate. See §4.2.1 — that
+gate can fail.
+
+The full decision register, including items outside this document's scope, is
+`docs/decision_register.md`.

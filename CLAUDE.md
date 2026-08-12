@@ -15,6 +15,12 @@ through name redaction, and (b) counterfactual hiring audits are usually
 underpowered to claim "no bias".
 
 Full design: `docs/architecture.md`. Linguistic rules: `docs/linguistic-spec.md`.
+Open decisions: `docs/decision_register.md`. Closed ones: `docs/decisions/`.
+Build order and current phase: `docs/project-plan.md`, `docs/build-plan.md`.
+
+**Read the register before implementing anything.** Several decisions are open and
+block specific phases; resolving one by default is the failure mode it exists to
+prevent.
 
 **The output of this repo is a scientific claim, not a product.** Correctness and
 reproducibility outrank speed, elegance, and convenience in every trade-off.
@@ -74,12 +80,17 @@ Every function producing output must be deterministic given the config and seed.
 ## Environment setup
 
 ```bash
-pip install -e ".[dev]"
+uv sync --extra dev          # uv.lock is authoritative; see ADR 006
 
-# Model data is a SEPARATE step. pip install does not fetch it.
+# Model data is a SEPARATE step. Installing packages does not fetch it.
 camel_data -i morphology-db-msa-r13
 camel_data -i disambig-bert-unfactored-msa
 ```
+
+Dependency resolution is pinned with `uv lock --exclude-newer <timestamp>`, so the
+lockfile is reproducible from a date. `uv.lock` enters the freeze hash
+(`docs/architecture.md` §6.3). A reviewer reproduces with `uv sync --frozen`,
+which fails loudly if the lock and `pyproject.toml` disagree.
 
 If you hit `FileNotFoundError` under `~/.camel_tools/data/`, the data step was
 skipped. Run it — do not switch toolkits to work around it.
@@ -124,8 +135,20 @@ Verified 12 August 2026. These are measured facts, not guesses.
 - The three referent tiers (A, B, C) must remain **separately identifiable** in
   output. `docs/architecture.md` §8.1 requires tier-wise precision and recall. Do
   not collapse them into one function or lose the tier label.
-- Modules under `arabgn/analysis/` enter the freeze hash. Keep them free of I/O
-  and side effects.
+- The freeze set is an **explicit manifest of paths** in the run config, not a
+  directory glob. A glob silently changes the hash when a file is added, and
+  silently misses freeze-relevant files added elsewhere. See ADR 007.
+- Modules under `arabgn/analysis/` are pure: no I/O, no side effects, no model
+  loading. They enter the manifest. `arabgn/contracts.py` also enters the manifest
+  — it defines output shape — but lives outside `analysis/` because both frozen
+  and unfrozen layers import it.
+- Model loading and caching live in `arabgn/tagger/`, which does **not** enter the
+  freeze. Model identity is pinned instead by `toolkit_version` and `db_version`
+  recorded on every emitted `TaggedCue` (`docs/architecture.md` §4.5), so
+  provenance travels with the data rather than only with a source hash.
+- Consequence for tests: `arabgn/analysis/` needs no `camel_data` and runs on a
+  laptop. `arabgn/tagger/` tests do require it and are marked so a clean checkout
+  fails legibly.
 - The scoring layer has two backends behind one interface: a deterministic
   synthetic backend (used by all tests, no model downloads) and the real ranker
   backend. Tests must never require the real backend.
@@ -142,6 +165,22 @@ pytest tests/test_tagger.py  # single module
 **Fixtures are ground truth authored by a human. Never edit a fixture to make a
 test pass.** If code disagrees with a fixture, either the code is wrong or the
 fixture needs human review — raise it, do not resolve it yourself.
+
+The rule protects ground truth about Arabic, so it names the fields it protects
+rather than the whole file (ADR 004). **Never change any of:**
+
+`text` · `text_f` · `text_m` · `cue` · `expected_label` · `expected_tier` ·
+`abstain_id` · `expected_text_norm` · `expected_cue_emitted` · `confidence`
+
+Those change only by the fixture author, and only through the settle-a-REVIEW
+procedure. `confidence` is protected deliberately: flipping `REVIEW` → `settled`
+is exactly the corruption this rule exists to prevent.
+
+Everything else — `group`, `note`, `doc_type`, `assert_type`, header comments,
+ordering — is test organisation and may be maintained by an implementer.
+
+**Every `REVIEW` fixture is an open question, not a target.** Skip it, with a
+reason naming the open spec section. Ten are currently unresolved.
 
 Do not write tests that assert current behaviour (`assert result == <whatever it
 returns now>`). Every test asserts against a value derived from
