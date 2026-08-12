@@ -28,7 +28,9 @@ __all__ = [
     "stratify",
     "stratified_sample",
     "DEFAULT_OVERSAMPLE",
+    "DEFAULT_ABSTAIN_OVERSAMPLE",
     "error_class_of",
+    "is_abstained",
 ]
 
 #: Error classes to over-sample, per spec §8.3 and architecture §8.1
@@ -40,6 +42,27 @@ DEFAULT_OVERSAMPLE: Mapping[str, float] = {
     "المتقدم": 3.0,  # spec §7.2 — pos=adj, rat=n, routes to Tier C with no target
     "المتقدمة": 3.0,
 }
+
+#: The other half of architecture §8.1's sampling plan — "Over-sample
+#: **abstentions** and the مطلوبة error class."
+#:
+#: Abstained cues are the ones the tagger could not resolve, so they are where
+#: human labels buy the most: θ is calibrated against the AB1 boundary cases, and
+#: AB4's gender asymmetry (register D14) is measured on real text only here. Drawn
+#: proportionally they are a minority of any sample, and most annotator hours go
+#: to cues the tagger already answered.
+#:
+#: 3.0 matches the weight :data:`DEFAULT_OVERSAMPLE` already applies to the known
+#: error classes, so the pre-registration declares one weight and a reason rather
+#: than two unrelated constants.
+#:
+#: **This is a frozen, pre-registered parameter.** Changing it changes which cues
+#: are adjudicated and therefore every §8.1 figure. It also makes the sample
+#: deliberately unrepresentative of the corpus: any prevalence statistic computed
+#: from annotated cues must be re-weighted back using
+#: :attr:`SamplingPlan.per_stratum`, which records the draw per stratum for
+#: exactly that purpose.
+DEFAULT_ABSTAIN_OVERSAMPLE = 3.0
 
 StratumKey = tuple[Hashable, ...]
 
@@ -57,6 +80,10 @@ class SamplingPlan:
     #: form their own strata and can be quota'd precisely.
     strata_fields: tuple[str, ...]
     requested: int
+    #: The abstention multiplier this draw used. Recorded on the plan because it
+    #: is a pre-registered parameter and because any prevalence figure computed
+    #: from the drawn cues has to be re-weighted by it.
+    abstain_oversample: float
     #: Strata that produced fewer cues than their quota, because the stratum was
     #: smaller than the quota. Reported, never silently absorbed — a silently
     #: shortfallen stratum reads as "covered" when it is not.
@@ -73,6 +100,17 @@ def error_class_of(
     """
     token = str(cue.get("token", ""))
     return token if token in oversample else None
+
+
+def is_abstained(cue: Mapping[str, object]) -> bool:
+    """Did the tagger abstain on this cue?
+
+    Read from ``abstain_reason`` rather than from ``referent``, because the
+    contract makes the trigger mandatory on every abstention
+    (``TaggedCue.__post_init__``) — so a missing trigger is impossible rather
+    than ambiguous.
+    """
+    return cue.get("abstain_reason") is not None
 
 
 def _default_key(cue: Mapping[str, object], fields: Sequence[str]) -> StratumKey:
@@ -113,8 +151,10 @@ def stratified_sample(
         "abstain_reason",
     ),
     oversample: Mapping[str, float] = DEFAULT_OVERSAMPLE,
+    abstain_oversample: float = DEFAULT_ABSTAIN_OVERSAMPLE,
 ) -> SamplingPlan:
-    """Draw ``n`` cues, stratified per spec §8.3, with error classes over-sampled.
+    """Draw ``n`` cues, stratified per spec §8.3, over-sampling both classes
+    architecture §8.1 names: abstentions, and the known error classes.
 
     Parameters
     ----------
@@ -129,6 +169,10 @@ def stratified_sample(
         Stratification variables. Defaults to the five in spec §8.3.
     oversample:
         Token → multiplier for known error classes.
+    abstain_oversample:
+        Multiplier for abstained cues. ``1.0`` restores proportional sampling.
+        Frozen and pre-registered — see :data:`DEFAULT_ABSTAIN_OVERSAMPLE`, and
+        note the re-weighting obligation recorded there.
 
     Determinism
     -----------
@@ -137,27 +181,47 @@ def stratified_sample(
     """
     if n <= 0:
         raise ValueError(f"n must be positive, got {n}")
+    if abstain_oversample <= 0:
+        raise ValueError(
+            f"abstain_oversample must be positive, got {abstain_oversample}. "
+            f"Use 1.0 for proportional sampling; 0 would drop every abstention, "
+            f"which prohibition 3 forbids."
+        )
 
     cue_list = tuple(cues)
     if not cue_list:
         raise ValueError("cannot sample from an empty cue set")
 
-    # The error class is part of the stratum key, not a weight applied to a
-    # stratum that merely *contains* an error-class cue. Weighting the whole
+    # Both over-sampled properties are part of the stratum key, not weights
+    # applied to a stratum that merely *contains* such a cue. Weighting the whole
     # stratum would inflate every cue sharing it — over-sampling the neighbours
     # of the error class instead of the error class itself, which is not what
     # spec §8.3 asks for.
+    #
+    # Abstention is keyed even though `abstain_reason` is usually already one of
+    # `fields`, which makes it redundant there and harmless. It is not redundant
+    # when a caller passes a narrower `fields`: without it, a stratum could mix
+    # abstained and resolved cues, and the multiplier would enlarge that
+    # stratum's quota without making the draw inside it prefer the abstentions
+    # the quota was enlarged for.
     def key_fn(cue: Mapping[str, object], flds: Sequence[str]) -> StratumKey:
-        return (*(cue.get(f) for f in flds), error_class_of(cue, oversample))
+        return (
+            *(cue.get(f) for f in flds),
+            is_abstained(cue),
+            error_class_of(cue, oversample),
+        )
 
     strata = stratify(cue_list, fields, key_fn=key_fn)
 
-    # Each stratum is now homogeneous in error class, so the multiplier applies
-    # to exactly the cues it is meant to.
+    # Each stratum is now homogeneous in both, so the multipliers apply to
+    # exactly the cues they are meant to. They compose: an abstained مطلوبة is
+    # both a known error class and an unresolved cue.
     weights: dict[StratumKey, float] = {}
     for key, items in strata.items():
         error_class = key[-1]
         multiplier = oversample.get(str(error_class), 1.0) if error_class else 1.0
+        if key[-2]:  # abstained
+            multiplier *= abstain_oversample
         weights[key] = len(items) * multiplier
 
     total_weight = sum(weights.values())
@@ -195,7 +259,9 @@ def stratified_sample(
         seed=seed,
         per_stratum=per_stratum,
         # Positionally aligned with the keys actually produced by `key_fn`.
-        strata_fields=(*fields, "error_class"),
+        # `error_class` stays last so the weight lookup above reads off `key[-1]`.
+        strata_fields=(*fields, "abstained", "error_class"),
         requested=n,
         shortfalls=shortfalls,
+        abstain_oversample=abstain_oversample,
     )

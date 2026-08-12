@@ -402,6 +402,53 @@ def test_known_error_classes_are_oversampled():
     )
 
 
+def test_abstentions_are_oversampled():
+    """Architecture §8.1 — "Over-sample **abstentions** and the مطلوبة error class".
+
+    Abstained cues are the ones the tagger could not resolve, so they are where
+    human labels buy the most: θ calibrates against the AB1 boundary cases and
+    D14's AB4 asymmetry is only measurable on them. Drawn proportionally they are
+    a minority, and annotator hours go mostly to cues already answered.
+    """
+    cues = _cues(120)
+    base_rate = sum(1 for c in cues if c["abstain_reason"]) / len(cues)
+    plan = stratified_sample(cues, n=60, seed=11)
+    ids = set(plan.cue_ids)
+    drawn = [c for c in cues if c["cue_id"] in ids]
+    drawn_rate = sum(1 for c in drawn if c["abstain_reason"]) / len(drawn)
+    assert drawn_rate > base_rate, (
+        f"abstentions drawn at {drawn_rate:.3f} vs base {base_rate:.3f} — "
+        f"architecture §8.1's sampling plan is not being applied"
+    )
+
+
+def test_proportional_sampling_is_still_reachable():
+    """``1.0`` must restore the un-weighted draw, so the multiplier is a choice
+    the pre-registration records rather than a behaviour baked in."""
+    cues = _cues(120)
+    base_rate = sum(1 for c in cues if c["abstain_reason"]) / len(cues)
+    plan = stratified_sample(cues, n=60, seed=11, abstain_oversample=1.0)
+    ids = set(plan.cue_ids)
+    drawn = [c for c in cues if c["cue_id"] in ids]
+    drawn_rate = sum(1 for c in drawn if c["abstain_reason"]) / len(drawn)
+    assert abs(drawn_rate - base_rate) < 0.1
+
+
+def test_the_abstention_multiplier_is_recorded_on_the_plan():
+    """It is pre-registered, and prevalence figures must be re-weighted by it.
+
+    A draw that does not carry its own weight cannot be corrected afterwards.
+    """
+    plan = stratified_sample(_cues(), n=20, seed=3, abstain_oversample=2.5)
+    assert plan.abstain_oversample == 2.5
+
+
+def test_a_zero_multiplier_is_refused():
+    """Prohibition 3 — abstentions are never dropped from a metric."""
+    with pytest.raises(ValueError, match="abstain_oversample"):
+        stratified_sample(_cues(), n=20, seed=3, abstain_oversample=0)
+
+
 def test_shortfalls_are_reported_not_absorbed():
     """A stratum smaller than its quota must be visible.
 
