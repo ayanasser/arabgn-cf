@@ -1,0 +1,45 @@
+[project]
+name = "arabgn"
+version = "0.1.0"
+description = "ArabGN-CF — a measurement instrument for auditing gender bias in Arabic résumé ranking"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+
+# Every dependency changes uv.lock and therefore the freeze hash
+# (docs/architecture.md §6.3). Adding one is a project decision, not an
+# implementation detail — CLAUDE.md prohibition 5. Ask first.
+dependencies = [
+    # Settled in CLAUDE.md "Toolkit decisions"; do not revisit.
+    # Exposes gen, form_gen and rat as separate fields, which the design depends on.
+    # NOTE: installing this does NOT fetch model data. See CLAUDE.md setup.
+    "camel-tools==1.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9.0",
+    "pyyaml>=6.0,<7.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["arabgn"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    # Tests needing model data under ~/.camel_tools/data/.
+    # arabgn/analysis/ is pure and must never need this (ADR 007); only
+    # arabgn/tagger/ does. Marked so a clean checkout fails legibly rather
+    # than confusingly.
+    "needs_camel_data: requires `camel_data -i ...` to have been run",
+]
+
+# Determinism: prohibition 6 forbids relying on iteration order for output.
+# -p no:randomly guards against a plugin reordering tests into a state-dependent
+# order; PYTHONHASHSEED is pinned so any accidental set-iteration is reproducible
+# rather than intermittently wrong.
+addopts = "-p no:cacheprovider"
