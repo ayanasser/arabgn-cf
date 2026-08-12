@@ -4,13 +4,33 @@
 # Never edit a fixture to make a test pass. If code disagrees with a fixture,
 # either the code is wrong or the fixture needs author review. Raise it.
 #
+# PROTECTED FIELDS — author-only, per CLAUDE.md and ADR 004:
+#   text, text_f, text_m, cue, expected_label, expected_tier, abstain_id,
+#   expected_text_norm, expected_cue_emitted, confidence
+# Everything else (group, note, doc_type, assert_type, ordering) is test
+# organisation and may be maintained by an implementer.
+#
 # Field meanings:
+#   id             : stable fixture identifier
+#   group          : 1–9, matching the section banners below (added per ADR 004;
+#                    groups were previously comments only and could not be read
+#                    from the data — 1 and 2 are both A-prefixed)
+#   doc_type       : ad | cv  — required; pro-drop defaults differ (spec §5.2)
+#   assert_type    : normalisation | twin_symmetry  — absent means a cue-label
+#                    fixture
+#   cue            : the token under test (cue-label fixtures)
 #   expected_label : applicant | non_applicant | ABSTAIN
-#   expected_tier  : A | B | C
+#   expected_tier  : A | B | C   — the resolution MECHANISM, not a linguistic
+#                    claim (ADR 002)
 #   abstain_id     : trigger from linguistic-spec.md §6, when label is ABSTAIN
+#   expected_cue_emitted : false — negative control; no cue may be emitted
+#   expected_text_norm   : assert_type: normalisation — expected NFC output
+#   text_f / text_m      : assert_type: twin_symmetry — the twin pair
 #   confidence     : settled | REVIEW  — REVIEW means the author must confirm
 #                    before this fixture is treated as binding
 #   note           : why this case exists; what it protects against
+#
+# 26 fixtures, of which 10 are REVIEW and are skipped, not failed.
 #
 # Status: v0.1 DRAFT. Every fixture marked REVIEW needs author sign-off.
 
@@ -26,6 +46,7 @@ meta:
 
 fixtures:
   - id: A01
+    group: 1
     doc_type: ad
     text: "المرشحة المثالية تتمتع بمهارات تواصل ممتازة"
     cue: "المرشحة"
@@ -37,6 +58,7 @@ fixtures:
       NP head. If this fails, cue detection or Tier A is broken.
 
   - id: A02
+    group: 1
     doc_type: ad
     text: "مطلوب مهندس برمجيات لديه خبرة واسعة في تطوير التطبيقات"
     cue: "مهندس"
@@ -48,6 +70,7 @@ fixtures:
       register (R1) as found in the wild.
 
   - id: A03
+    group: 1
     doc_type: cv
     text: "المهندسة المسؤولة عن تطوير النظام"
     cue: "المهندسة"
@@ -61,6 +84,7 @@ fixtures:
 # ---------------------------------------------------------------------------
 
   - id: A04
+    group: 2
     doc_type: ad
     text: "مطلوب مهندس برمجيات لديه خبرة واسعة في تطوير التطبيقات"
     cue: "خبرة"
@@ -72,6 +96,7 @@ fixtures:
       refers to the experience, not the person. rat=i verified.
 
   - id: A05
+    group: 2
     doc_type: ad
     text: "الشركة تبحث عن موظفين ذوي كفاءة عالية"
     cue: "الشركة"
@@ -81,6 +106,7 @@ fixtures:
     note: Feminine, rational-looking to a naive tagger, but rat=i. The employer.
 
   - id: A06
+    group: 2
     doc_type: cv
     text: "خبرة لا تقل عن خمس سنوات"
     cue: "سنوات"
@@ -90,6 +116,7 @@ fixtures:
     note: Feminine plural, rat=i. Guards against counting every ة as a person.
 
   - id: A07
+    group: 2
     doc_type: cv
     text: "حاصلة على بكالوريوس هندسة"
     cue: "هندسة"
@@ -103,6 +130,7 @@ fixtures:
 # ---------------------------------------------------------------------------
 
   - id: B01
+    group: 3
     doc_type: ad
     text: "مطلوبة مهندسة برمجيات حاصلة على بكالوريوس هندسة"
     cue: "حاصلة"
@@ -119,6 +147,7 @@ fixtures:
       latter, this fixture becomes Tier C-like and the spec needs amending.
 
   - id: B02
+    group: 3
     doc_type: cv
     text: "حاصل على شهادة معتمدة في إدارة المشاريع"
     cue: "حاصل"
@@ -137,6 +166,7 @@ fixtures:
 # ---------------------------------------------------------------------------
 
   - id: C01
+    group: 4
     doc_type: ad
     text: "مطلوب مهندس برمجيات لديه خبرة واسعة في تطوير التطبيقات"
     cue: "واسعة"
@@ -149,6 +179,7 @@ fixtures:
       Guards against the naive "feminine adjective = female applicant" error.
 
   - id: C02
+    group: 4
     doc_type: ad
     text: "الشركة تبحث عن موظفين في بيئة عمل شركة كبيرة"
     cue: "كبيرة"
@@ -158,6 +189,7 @@ fixtures:
     note: Adjective, target = شركة (rat=i).
 
   - id: C03
+    group: 4
     doc_type: ad
     text: "المرشحة المثالية تتمتع بمهارات تواصل ممتازة"
     cue: "المثالية"
@@ -169,6 +201,7 @@ fixtures:
       Pairs with C01 to show inheritance works in both directions.
 
   - id: C04
+    group: 4
     doc_type: ad
     text: "المرشحة المثالية تتمتع بمهارات تواصل ممتازة"
     cue: "ممتازة"
@@ -188,6 +221,7 @@ fixtures:
 # ---------------------------------------------------------------------------
 
   - id: C05
+    group: 5
     doc_type: cv
     text: "تخرجت من جامعة القاهرة عام 2018 وعملت في شركة كبيرة"
     cue: "تخرجت"
@@ -202,6 +236,7 @@ fixtures:
       rule before this fixture binds.
 
   - id: C06
+    group: 5
     doc_type: cv
     text: "تخرجت من جامعة القاهرة عام 2018 وعملت في شركة كبيرة"
     cue: "وعملت"
@@ -211,6 +246,7 @@ fixtures:
     note: Second verb, same subject. Tests that pro-drop resolution persists.
 
   - id: C07
+    group: 5
     doc_type: cv
     text: "تخرج من جامعة عين شمس وحصل على شهادة معتمدة"
     cue: "تخرج"
@@ -223,6 +259,7 @@ fixtures:
       against anyone switching the disambiguator back to MLE.
 
   - id: C08
+    group: 5
     doc_type: ad
     text: "الشركة تبحث عن موظفين ذوي كفاءة عالية"
     cue: "تبحث"
@@ -239,6 +276,7 @@ fixtures:
 # ---------------------------------------------------------------------------
 
   - id: E01
+    group: 6
     doc_type: ad
     text: "مطلوبة مهندسة برمجيات حاصلة على بكالوريوس هندسة"
     cue: "مطلوبة"
@@ -255,6 +293,7 @@ fixtures:
       up in the precision/recall table.
 
   - id: E02
+    group: 6
     doc_type: ad
     text: "يشترط أن يكون المتقدم حاصلا على خبرة لا تقل عن خمس سنوات"
     cue: "المتقدم"
@@ -272,6 +311,7 @@ fixtures:
       pre-registration.
 
   - id: E03
+    group: 6
     doc_type: cv
     text: "تخرج من جامعة عين شمس وحصل على شهادة معتمدة"
     cue: "شمس"
@@ -289,6 +329,7 @@ fixtures:
 # ---------------------------------------------------------------------------
 
   - id: N01
+    group: 7
     doc_type: ad
     text: "حاصلة على بكالوريوس هندسة"
     cue: "على"
@@ -299,6 +340,7 @@ fixtures:
       POS filtering (spec §3.1) were removed. This fixture guards the filter.
 
   - id: N02
+    group: 7
     doc_type: cv
     text: "تخرجت من جامعة القاهرة عام 2018"
     cue: "2018"
@@ -311,6 +353,7 @@ fixtures:
 # ---------------------------------------------------------------------------
 
   - id: O01
+    group: 8
     doc_type: cv
     text: "حاصلة على بكالوريوس هندسة"
     assert_type: normalisation
@@ -322,6 +365,7 @@ fixtures:
       This test must never be weakened or skipped. See CLAUDE.md prohibition 1.
 
   - id: O02
+    group: 8
     doc_type: cv
     text: "أحمد إبراهيم آدم"
     assert_type: normalisation
@@ -329,11 +373,34 @@ fixtures:
     confidence: settled
     note: Asserts hamza forms survive. أ إ آ must not collapse to ا.
 
+  - id: O03
+    group: 8
+    doc_type: cv
+    text: "مُهَنْدِسَة"
+    assert_type: normalisation
+    expected_text_norm: "مُهَنْدِسَة"
+    confidence: settled
+    note: >
+      Asserts harakat survive. Architecture §3.2 requires diacritics preserved,
+      but O01 and O02 guard only ة and hamza — a step that stripped all vowel
+      marks while leaving those intact would pass the whole suite.
+      مُهَنْدِسَة carries exactly one mark per base letter (damma, fatha, sukun,
+      kasra, fatha) with no stacking, so NFC is the identity function on it and
+      byte-equality is the correct assertion.
+      KNOWN GAP (ADR 005): this AVOIDS the combining-mark reordering question
+      rather than answering it. NFC canonically reorders stacked marks by
+      combining class, so a token carrying shadda plus a vowel may legitimately
+      change byte order under a CORRECT implementation. A stacked-mark fixture
+      is still owed and its expected_text_norm must be author-supplied — deriving
+      it from what the code returns would be the assert-current-behaviour pattern
+      CLAUDE.md forbids.
+
 # ---------------------------------------------------------------------------
 # GROUP 9 — Twin symmetry invariants
 # ---------------------------------------------------------------------------
 
   - id: T01
+    group: 9
     assert_type: twin_symmetry
     text_f: "حاصلة على بكالوريوس هندسة من جامعة القاهرة"
     text_m: "حاصل على بكالوريوس هندسة من جامعة القاهرة"
@@ -347,6 +414,7 @@ fixtures:
       Run this over every twin pair the generator emits, not just this fixture.
 
   - id: T02
+    group: 9
     assert_type: twin_symmetry
     text_f: "تخرجت من جامعة القاهرة وعملت مهندسة برمجيات"
     text_m: "تخرج من جامعة القاهرة وعمل مهندس برمجيات"
