@@ -154,7 +154,7 @@ Still a smoke test — Tiers A/B only. Phase 6 is the binding form.
 | 5 — Tier C | 🟡 **adjective branch built** (C01–C03 pass; C04-style ambiguity abstains under AB2). **Verb branch blocked on D8** (pro-drop); role test on D7; `شمس` on D9. |
 | 6 — twin symmetry, all tiers | Phase 5 |
 | 7 — ArabJobs sweep → C1 tables | 🟡 **loader built** — all 8,546 ads load, checksummed, ta-marbuta preserved. The **sweep** still needs Phases 4–6 and D9. |
-| 8 — generator | Phase 7; generation method undecided |
+| 8 — generator | 🟡 **twin-pair invariants built** (`arabgn/analysis/twins.py`, frozen) — architecture §5.2's four enforced invariants, plus the tokenization delta measured per audit subject rather than forced to zero. The **generator** still needs the method decision; the register typology R1–R5 still needs a trustworthy tagger for R3. |
 | 9 — blinding, freeze | ✅ **built** — HMAC blinding, ordering-leak detection, explicit-manifest freeze, CLI. Only the **external time anchor** still needs a human account (~1 h). |
 | 10 — analysis machinery | ✅ **built** — synthetic backend, variance decomposition, two-way cluster-robust SE, Holm, TOST, power curves, guarded reporting. The **pilot** still needs the generator (Phase 8) and a scoring pass. σ²_cv wording still owed. |
 | 11 — pre-registration → C4 | C3 numbers |
