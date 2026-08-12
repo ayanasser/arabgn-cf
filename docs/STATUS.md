@@ -11,11 +11,11 @@ Legend: ✅ done · 🟡 partial (reason given) · ⛔ blocked (blocker named) �
 
 | | Count |
 |---|---|
-| Phases complete | 3 of 11 (Phase 0, 1, 3) |
+| Phases complete | 4 of 11 (0, 1, 2A, 3) |
 | Phases partial | 2 (2A, 2B) |
 | Phases blocked | 6 (4, 5, 6, 7, 8–11) |
 | Tests passing | see §6 |
-| Decisions closed | 7 of 13 |
+| Decisions closed | 7 of 14 |
 | REVIEW fixtures outstanding | 10 of 27 |
 
 **The critical path is human, not technical.** Everything buildable without your
@@ -97,10 +97,22 @@ Buildable without you; the **gold set** is not.
 | Tier C → `NotImplementedError` | ✅ names cue, POS, D7 and D8 |
 | **Frozen θ values** | ⛔ Phase 4 |
 
-## 6. Phase 3 — Twin symmetry (provisional) ⬜
+## 6. Phase 3 — Twin symmetry (provisional) ✅ — **and it found a real asymmetry**
 
-Smoke test only — Tiers A/B test symmetry-in-abstention, not
-symmetry-in-classification. Phase 6 is the binding form.
+| Item | Status |
+|---|---|
+| `check_twin_symmetry` — count, tier, referent, trigger | ✅ |
+| Reusable property sweep over arbitrary pairs | ✅ `check_all_pairs` |
+| No token-count assertion (architecture §5.2) | ✅ asserted absent |
+| T01 end-to-end through the real model | ⚠️ **`xfail(strict)` — finding D14** |
+| T02 | ⛔ REVIEW, skipped |
+
+**Finding D14 — AB4 is gender-asymmetric.** `حاصلة` abstains under AB4 (34
+candidates, 12 of them `gen=m`); `حاصل` abstains under AB1 (19 candidates, 0
+`gen=f`). Same label, different trigger, therefore different adjudication strata.
+Structural, not a code bug. `docs/findings/001-ab4-is-gender-asymmetric.md`.
+
+Still a smoke test — Tiers A/B only. Phase 6 is the binding form.
 
 ## 7. Phases 4–11 ⛔
 
@@ -125,6 +137,8 @@ symmetry-in-classification. Phase 6 is the binding form.
 | Figures 1 & 2 exist only in the PDF | `docs/architecture.md` §12 |
 | Proposal artifact claims false | `docs/proposal-corrections.md` |
 | σ²_cv notation ambiguous | architecture §7.3 |
+| **AB4 gender-asymmetric (D14, P0)** | `docs/findings/001-...md` |
+| spec §4.2 says log-probabilities; evidence uses `score` | `docs/theta-sweep.md` §5 |
 
 ---
 
@@ -146,6 +160,7 @@ Findings from each pass are recorded in the review log below.
 
 | Item | Pass 1 findings | Pass 2 findings |
 |---|---|---|
+| Phase 3 symmetry | Unused test imports; `genders_differ` missing from `__all__`. **Fixed**. | Added an end-to-end run through the real model — the pure-layer test used recorded masses and would never have caught this. **It failed, and the failure is real**: AB4 fires on `حاصلة` and not `حاصل`. Recorded as finding D14 and marked `xfail(strict=True)` rather than weakened. |
 | Phase 2B tagger | `rationality_mass` used `+` to sum float scores — **not associative**, so mass differed in the last bits by candidate order (0.5625 vs 0.5625000000000001). A real prohibition-6 violation: a mass near θ could resolve differently, and serialised output would not be byte-stable so the freeze hash would not reproduce. **Fixed**: `math.fsum`, exactly-rounded. Also `blind()` hardcoded `DocType.AD`. | `form_divergence` / `dominant_gender` missing from `__all__`; unused imports. **Fixed**. θ sweep over 9 real fixtures shows the feasible region is 2,249 grid points, **not** the ~7-point window ADR 001 estimated from three cases — risk is lower than recorded. |
 | Phase 1 normalisation | Guard baselined on raw input; NFC composition flagged as a violation. **Fixed** — baseline is now the NFC form. | — |
 | Phase 2A adjudication | (1) Over-sampling weighted the *whole stratum* containing an error-class cue, not the class — a `مطلوبة` cue gave 9 neighbours 3× weight too. **Fixed**: error class is now part of the stratum key. (2) `adjudicate` missing from `__all__`. (3) `id()` used for test ids — a memory address, nondeterministic. Both **fixed**. | `strata_fields` declared 5 names while keys carried 6 elements, so keys could not be reconstructed positionally. **Fixed**: `error_class` appended. Verified over-sampling now draws §7.1 at 2.22× base rate (was diffuse). |
