@@ -41,6 +41,7 @@ FROZEN_SOURCES: tuple[str, ...] = (
     "arabgn/contracts.py",
     "arabgn/analysis/__init__.py",
     "arabgn/analysis/agreement.py",
+    "arabgn/analysis/agreement_target.py",
     "arabgn/analysis/blinding.py",
     "arabgn/analysis/cues.py",
     "arabgn/analysis/freeze.py",

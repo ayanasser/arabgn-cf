@@ -11,10 +11,10 @@ Legend: ✅ done · 🟡 partial (reason given) · ⛔ blocked (blocker named) �
 
 | | Count |
 |---|---|
-| Phases complete | 4 of 11 (0, 1, 2A, 3) |
+| Phases complete | 6 of 11 (0, 1, 2A, 3, 9, 10-machinery) |
 | Phases partial | 2 (2A, 2B) |
 | Phases blocked | 6 (4, 5, 6, 7, 8–11) |
-| Tests passing | see §6 |
+| Tests passing | **235** (+1 skipped, +1 xfailed finding) |
 | Decisions closed | 7 of 14 |
 | REVIEW fixtures outstanding | 10 of 27 |
 
@@ -119,7 +119,7 @@ Still a smoke test — Tiers A/B only. Phase 6 is the binding form.
 | Phase | Blocker |
 |---|---|
 | 4 — gold set κ ≥ 0.7 + θ calibration | Human annotation. **Both gates can fail.** |
-| 5 — Tier C | D7, D8, D9 |
+| 5 — Tier C | 🟡 **adjective branch built** (C01–C03 pass; C04-style ambiguity abstains under AB2). **Verb branch blocked on D8** (pro-drop); role test on D7; `شمس` on D9. |
 | 6 — twin symmetry, all tiers | Phase 5 |
 | 7 — ArabJobs sweep → C1 tables | 🟡 **loader built** — all 8,546 ads load, checksummed, ta-marbuta preserved. The **sweep** still needs Phases 4–6 and D9. |
 | 8 — generator | Phase 7; generation method undecided |
@@ -160,6 +160,7 @@ Findings from each pass are recorded in the review log below.
 
 | Item | Pass 1 findings | Pass 2 findings |
 |---|---|---|
+| Tier C adjectives | CAMeL ships **no dependency parser**, so adjacency is the available method, not a shortcut — declared with its failure modes (coordination, intervening modifiers, predicative use) rather than left implicit. | The freeze-manifest guard fired for the **second** time, catching `agreement_target.py` before it could sit outside the hash. C04's competing-heads case abstains under AB2 with both candidates reported, rather than picking one and silently settling a REVIEW fixture. |
 | ArabJobs loader | Corpus has **no seniority column**, so §3.2's "from source metadata" is not satisfiable and spec §8.3's seniority stratum is degenerate. Recorded as `UNSPECIFIED` with an explicit `seniority_derived=False` flag rather than letting the enum default read as a finding. | ArabJobs ships its **own** ad-level `gender` label (male 4,767 / neutral 2,405 / female 1,374). Deliberately **not** used as tagger input — consuming it would make C1 circular. Retained for convergent-validity comparison only, with a test asserting it never reaches a `DocRecord`. |
 | Phase 10 analysis | **Generative model was wrong.** With only level effects, both `ad[a]` and `pair[c]` cancel in the twin difference, so differences are iid and σ²_ad/σ²_cv in the §7.3 formula would both be zero — the formula would reduce to the iid case. **Fixed**: added ad×gender and pair×gender interaction terms, which survive differencing and are what σ²_ad and σ²_cv actually denote. This also pins the §10 #4 definition: σ²_cv is twin discordance. | A test asserted inflation ≈1.0 from a single seed and read 0.79. Investigated rather than widening the tolerance: the estimator is correct (mean 0.988 over 20 seeds at 40×50, 1.002 at 100×100) and seed 23 was a low draw. **Fixed** by asserting the expectation across seeds. With interaction terms the inflation is 4.12×. |
 | Phase 9 blinding/freeze | Test asserted `'f' not in token` — but `f` is a hex digit, so it appears in any digest by chance. A flawed assertion, not a leak. **Replaced** with an avalanche test (>30% of hex digits must change when polarity flips), which tests the property that matters. | `freeze.py` is pure by design but nothing could **run** it against the repo. **Added** `arabgn/freeze_cli.py` (I/O, unfrozen) with the real 11-source manifest, plus a test asserting the manifest never drifts behind `arabgn/analysis/`. Real hash computes: `edbb4935…`, and the CLI warns that it is NOT a pre-registration freeze while θ is unset. |
