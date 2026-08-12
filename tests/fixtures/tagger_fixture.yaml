@@ -1,0 +1,357 @@
+# ArabGN-CF tagger fixtures
+#
+# GROUND TRUTH — authored by a human, verified against the linguistic spec.
+# Never edit a fixture to make a test pass. If code disagrees with a fixture,
+# either the code is wrong or the fixture needs author review. Raise it.
+#
+# Field meanings:
+#   expected_label : applicant | non_applicant | ABSTAIN
+#   expected_tier  : A | B | C
+#   abstain_id     : trigger from linguistic-spec.md §6, when label is ABSTAIN
+#   confidence     : settled | REVIEW  — REVIEW means the author must confirm
+#                    before this fixture is treated as binding
+#   note           : why this case exists; what it protects against
+#
+# Status: v0.1 DRAFT. Every fixture marked REVIEW needs author sign-off.
+
+meta:
+  spec_version: "0.1"
+  disambiguator: "BERTUnfactoredDisambiguator, msa, top=100"
+  morphology_db: "morphology-db-msa-r13"
+  authored: "2026-08-12"
+
+# ---------------------------------------------------------------------------
+# GROUP 1 — Tier A, unambiguous rational (applicant)
+# ---------------------------------------------------------------------------
+
+fixtures:
+  - id: A01
+    doc_type: ad
+    text: "المرشحة المثالية تتمتع بمهارات تواصل ممتازة"
+    cue: "المرشحة"
+    expected_label: applicant
+    expected_tier: A
+    confidence: settled
+    note: >
+      Cleanest positive case. rat=r unambiguous, occupies the main requirement
+      NP head. If this fails, cue detection or Tier A is broken.
+
+  - id: A02
+    doc_type: ad
+    text: "مطلوب مهندس برمجيات لديه خبرة واسعة في تطوير التطبيقات"
+    cue: "مهندس"
+    expected_label: applicant
+    expected_tier: A
+    confidence: settled
+    note: >
+      Masculine counterpart of A01. Verified rat=r. This is the generic-masculine
+      register (R1) as found in the wild.
+
+  - id: A03
+    doc_type: cv
+    text: "المهندسة المسؤولة عن تطوير النظام"
+    cue: "المهندسة"
+    expected_label: applicant
+    expected_tier: A
+    confidence: settled
+    note: Feminine occupational noun, rat=r.
+
+# ---------------------------------------------------------------------------
+# GROUP 2 — Tier A, unambiguous irrational (not applicant)
+# ---------------------------------------------------------------------------
+
+  - id: A04
+    doc_type: ad
+    text: "مطلوب مهندس برمجيات لديه خبرة واسعة في تطوير التطبيقات"
+    cue: "خبرة"
+    expected_label: non_applicant
+    expected_tier: A
+    confidence: settled
+    note: >
+      THE canonical negative case, named in the paper abstract. Feminine but
+      refers to the experience, not the person. rat=i verified.
+
+  - id: A05
+    doc_type: ad
+    text: "الشركة تبحث عن موظفين ذوي كفاءة عالية"
+    cue: "الشركة"
+    expected_label: non_applicant
+    expected_tier: A
+    confidence: settled
+    note: Feminine, rational-looking to a naive tagger, but rat=i. The employer.
+
+  - id: A06
+    doc_type: cv
+    text: "خبرة لا تقل عن خمس سنوات"
+    cue: "سنوات"
+    expected_label: non_applicant
+    expected_tier: A
+    confidence: settled
+    note: Feminine plural, rat=i. Guards against counting every ة as a person.
+
+  - id: A07
+    doc_type: cv
+    text: "حاصلة على بكالوريوس هندسة"
+    cue: "هندسة"
+    expected_label: non_applicant
+    expected_tier: A
+    confidence: settled
+    note: Field of study. Feminine, rat=i.
+
+# ---------------------------------------------------------------------------
+# GROUP 3 — Tier B, genuine lexical ambiguity → abstain
+# ---------------------------------------------------------------------------
+
+  - id: B01
+    doc_type: ad
+    text: "مطلوبة مهندسة برمجيات حاصلة على بكالوريوس هندسة"
+    cue: "حاصلة"
+    expected_label: ABSTAIN
+    abstain_id: AB1
+    expected_tier: B
+    confidence: REVIEW
+    note: >
+      VERIFIED PROBLEM CASE. rat_cands = {i, r}; top-1 returns i, which is wrong
+      here — it refers to the sought engineer. This is exactly the case the
+      abstain mechanism exists for.
+      AUTHOR DECISION: is ABSTAIN the right expected label, or should the role
+      test (spec §5.1) resolve it to `applicant` via the preceding مهندسة? If the
+      latter, this fixture becomes Tier C-like and the spec needs amending.
+
+  - id: B02
+    doc_type: cv
+    text: "حاصل على شهادة معتمدة في إدارة المشاريع"
+    cue: "حاصل"
+    expected_label: ABSTAIN
+    abstain_id: AB1
+    expected_tier: B
+    confidence: REVIEW
+    note: >
+      Masculine twin of B01. Must behave identically — if the tagger abstains on
+      the feminine form but resolves the masculine, the instrument is itself
+      gender-asymmetric, which would be fatal to the paper.
+      This pairing is the single most important invariant in the fixture set.
+
+# ---------------------------------------------------------------------------
+# GROUP 4 — Tier C, adjective inheriting from head noun
+# ---------------------------------------------------------------------------
+
+  - id: C01
+    doc_type: ad
+    text: "مطلوب مهندس برمجيات لديه خبرة واسعة في تطوير التطبيقات"
+    cue: "واسعة"
+    expected_label: non_applicant
+    expected_tier: C
+    confidence: settled
+    note: >
+      The other half of the paper's canonical example. Feminine adjective,
+      rat=n, agreement target = خبرة (rat=i) → inherits non_applicant.
+      Guards against the naive "feminine adjective = female applicant" error.
+
+  - id: C02
+    doc_type: ad
+    text: "الشركة تبحث عن موظفين في بيئة عمل شركة كبيرة"
+    cue: "كبيرة"
+    expected_label: non_applicant
+    expected_tier: C
+    confidence: settled
+    note: Adjective, target = شركة (rat=i).
+
+  - id: C03
+    doc_type: ad
+    text: "المرشحة المثالية تتمتع بمهارات تواصل ممتازة"
+    cue: "المثالية"
+    expected_label: applicant
+    expected_tier: C
+    confidence: settled
+    note: >
+      Positive Tier C via adjective. Target = المرشحة (rat=r) → applicant.
+      Pairs with C01 to show inheritance works in both directions.
+
+  - id: C04
+    doc_type: ad
+    text: "المرشحة المثالية تتمتع بمهارات تواصل ممتازة"
+    cue: "ممتازة"
+    expected_label: non_applicant
+    expected_tier: C
+    confidence: REVIEW
+    note: >
+      Target is مهارات (skills, rat=i), not المرشحة — despite sitting in a
+      sentence about the applicant. Tests that inheritance follows syntax and
+      not sentence-level topic.
+      AUTHOR DECISION: confirm the attachment. If ممتازة attaches to تواصل
+      rather than مهارات the label is unchanged, but the head_token assertion
+      in the test must match.
+
+# ---------------------------------------------------------------------------
+# GROUP 5 — Tier C, verb agreement (the paper's core phenomenon)
+# ---------------------------------------------------------------------------
+
+  - id: C05
+    doc_type: cv
+    text: "تخرجت من جامعة القاهرة عام 2018 وعملت في شركة كبيرة"
+    cue: "تخرجت"
+    expected_label: applicant
+    expected_tier: C
+    confidence: REVIEW
+    note: >
+      THE central case for the paper's thesis: feminine verb agreement in a CV,
+      pro-drop subject, survives any name redaction.
+      Depends on the pro-drop default (spec §5.2) — in CV context, an overt-
+      subjectless finite verb defaults to applicant. AUTHOR MUST CONFIRM that
+      rule before this fixture binds.
+
+  - id: C06
+    doc_type: cv
+    text: "تخرجت من جامعة القاهرة عام 2018 وعملت في شركة كبيرة"
+    cue: "وعملت"
+    expected_label: applicant
+    expected_tier: C
+    confidence: REVIEW
+    note: Second verb, same subject. Tests that pro-drop resolution persists.
+
+  - id: C07
+    doc_type: cv
+    text: "تخرج من جامعة عين شمس وحصل على شهادة معتمدة"
+    cue: "تخرج"
+    expected_label: applicant
+    expected_tier: C
+    confidence: REVIEW
+    note: >
+      Masculine twin of C05. MLE disambiguator returns gen=f here (WRONG);
+      BERT returns gen=m (correct). This fixture is also a regression test
+      against anyone switching the disambiguator back to MLE.
+
+  - id: C08
+    doc_type: ad
+    text: "الشركة تبحث عن موظفين ذوي كفاءة عالية"
+    cue: "تبحث"
+    expected_label: non_applicant
+    expected_tier: C
+    confidence: settled
+    note: >
+      Critical contrast with C05. Feminine verb, but the subject is الشركة
+      (rat=i), not the applicant. Same morphology, opposite label — proves
+      the tagger uses reference and not surface gender.
+
+# ---------------------------------------------------------------------------
+# GROUP 6 — Known systematic error classes (spec §7)
+# ---------------------------------------------------------------------------
+
+  - id: E01
+    doc_type: ad
+    text: "مطلوبة مهندسة برمجيات حاصلة على بكالوريوس هندسة"
+    cue: "مطلوبة"
+    expected_label: non_applicant
+    expected_tier: A
+    confidence: REVIEW
+    note: >
+      KNOWN ERROR CLASS (spec §7.1). rat=i on all readings, so the tagger will
+      label non_applicant — but a human annotator would likely say this refers
+      to the sought person.
+      The fixture encodes the TAGGER'S EXPECTED (wrong) BEHAVIOUR deliberately,
+      so the error is measured rather than hidden. AUTHOR DECISION: confirm this
+      framing, and confirm the human gold label is `applicant` so the gap shows
+      up in the precision/recall table.
+
+  - id: E02
+    doc_type: ad
+    text: "يشترط أن يكون المتقدم حاصلا على خبرة لا تقل عن خمس سنوات"
+    cue: "المتقدم"
+    expected_label: ABSTAIN
+    abstain_id: AB2
+    expected_tier: C
+    confidence: REVIEW
+    note: >
+      KNOWN ERROR CLASS (spec §7.2). "The applicant" — the most explicitly
+      applicant-referring word available — analyses as pos=adj, rat=n, so it
+      routes to Tier C and looks for an agreement target it does not have.
+      AUTHOR DECISION: accept the abstain, or add a frozen lexicon of
+      applicant-denoting terms (المتقدم، المرشح، الباحث عن عمل) applied as a
+      pre-pass? A lexicon is defensible but must be declared in the
+      pre-registration.
+
+  - id: E03
+    doc_type: cv
+    text: "تخرج من جامعة عين شمس وحصل على شهادة معتمدة"
+    cue: "شمس"
+    expected_label: non_applicant
+    expected_tier: A
+    confidence: REVIEW
+    note: >
+      KNOWN ERROR CLASS (spec §7.3). Analyses as rat=r — a false rational cue
+      inside an institution name. Without the institution pre-pass the tagger
+      would emit a spurious applicant-referring cue.
+      AUTHOR DECISION: institution-name list, or accept and report?
+
+# ---------------------------------------------------------------------------
+# GROUP 7 — Negative controls: must produce NO cue at all
+# ---------------------------------------------------------------------------
+
+  - id: N01
+    doc_type: ad
+    text: "حاصلة على بكالوريوس هندسة"
+    cue: "على"
+    expected_cue_emitted: false
+    confidence: settled
+    note: >
+      Function word. Returns rat={n, na, r} — would flood the abstain queue if
+      POS filtering (spec §3.1) were removed. This fixture guards the filter.
+
+  - id: N02
+    doc_type: cv
+    text: "تخرجت من جامعة القاهرة عام 2018"
+    cue: "2018"
+    expected_cue_emitted: false
+    confidence: settled
+    note: Digit. No gender.
+
+# ---------------------------------------------------------------------------
+# GROUP 8 — Orthographic integrity (the ta-marbuta guard)
+# ---------------------------------------------------------------------------
+
+  - id: O01
+    doc_type: cv
+    text: "حاصلة على بكالوريوس هندسة"
+    assert_type: normalisation
+    expected_text_norm: "حاصلة على بكالوريوس هندسة"
+    confidence: settled
+    note: >
+      LOAD-BEARING TEST. Asserts ة survives normalisation unchanged. If any
+      normalisation step maps ة → ه, this fails and the entire study is invalid.
+      This test must never be weakened or skipped. See CLAUDE.md prohibition 1.
+
+  - id: O02
+    doc_type: cv
+    text: "أحمد إبراهيم آدم"
+    assert_type: normalisation
+    expected_text_norm: "أحمد إبراهيم آدم"
+    confidence: settled
+    note: Asserts hamza forms survive. أ إ آ must not collapse to ا.
+
+# ---------------------------------------------------------------------------
+# GROUP 9 — Twin symmetry invariants
+# ---------------------------------------------------------------------------
+
+  - id: T01
+    assert_type: twin_symmetry
+    text_f: "حاصلة على بكالوريوس هندسة من جامعة القاهرة"
+    text_m: "حاصل على بكالوريوس هندسة من جامعة القاهرة"
+    confidence: settled
+    note: >
+      THE MOST IMPORTANT INVARIANT IN THE SUITE. Asserts the tagger produces
+      structurally identical output for a twin pair: same cue count, same tiers,
+      same labels, same abstain triggers — differing only in the `gen` field.
+      If the instrument treats feminine and masculine text asymmetrically, every
+      downstream bias measurement is confounded by the instrument itself.
+      Run this over every twin pair the generator emits, not just this fixture.
+
+  - id: T02
+    assert_type: twin_symmetry
+    text_f: "تخرجت من جامعة القاهرة وعملت مهندسة برمجيات"
+    text_m: "تخرج من جامعة القاهرة وعمل مهندس برمجيات"
+    confidence: REVIEW
+    note: >
+      Verb-agreement twin. Note the masculine form is shorter in characters —
+      this fixture also documents why strict token-count matching is
+      unsatisfiable (architecture doc §5.2).
