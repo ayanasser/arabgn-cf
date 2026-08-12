@@ -95,6 +95,11 @@ which fails loudly if the lock and `pyproject.toml` disagree.
 If you hit `FileNotFoundError` under `~/.camel_tools/data/`, the data step was
 skipped. Run it — do not switch toolkits to work around it.
 
+**The download name and the API name differ.** `camel_data -i` takes
+`morphology-db-msa-r13`; `MorphologyDB.builtin_db()` takes **`calima-msa-r13`**.
+Passing the download name to the API raises `KeyError`, not a helpful message.
+Verified 12 Aug 2026 — see `docs/decisions/002-appendix-morph-class-feasibility.md`.
+
 ---
 
 ## Toolkit decisions (settled — do not revisit)

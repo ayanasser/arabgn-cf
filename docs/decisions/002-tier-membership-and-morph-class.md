@@ -1,8 +1,17 @@
 # ADR 002 — Tiers stay mechanism-based; linguistic class is recorded separately
 
 - **Register ID:** D2 (P0)
-- **Status:** Accepted, with the cross-tabulation **conditional** on the
-  feasibility probe in `002-appendix-morph-class-feasibility.md`
+- **Status:** Accepted. Probe returned **GO** — see
+  `002-appendix-morph-class-feasibility.md`. `morph_class` derives from the CAMeL
+  `stemcat` field and is typed `str | None`.
+- **Amended by the probe:** the premise below — that participles split across
+  tiers *by lexeme* — is **not accurate**. `pos`, `rat` and `stemcat` co-vary
+  across analyses of the *same token*, so tier follows the analysis the
+  disambiguator selects in context, not the token. `morph_class` is therefore a
+  property of the **selected analysis**. The decision is unchanged and the
+  cross-tabulation is still well defined; only the explanation changes. Two
+  entries in the table below are also corrected there (`العاملة` carries both
+  readings; `المتقدم` is the only single-analysis case).
 - **Date:** 12 August 2026
 - **Affects:** `docs/architecture.md` §4.5, §8.1 · `docs/linguistic-spec.md` §5,
   §7.2 · `arabgn/contracts.py` · Phase 2B · Phase 7 reporting

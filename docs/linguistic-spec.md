@@ -157,14 +157,26 @@ mass distributions of clean rational cases and genuinely ambiguous cases do not
 overlap. If they do, no θ exists and **AB1 must be redesigned, not tuned.** This
 gate can fail.
 
-#### 4.2.2 Context does not disambiguate `حاصلة`
+#### 4.2.2 Context does not disambiguate `حاصلة` — and now we know why
 
 `حاصلة` returns mass(`r`) = 0.324 in ad context and 0.330 in CV context. Two very
 different contexts move the minority reading by six thousandths.
 
-This is evidence that **abstention is the correct behaviour** for this lexeme
-rather than an instrument shortcoming, and should be reported as a finding rather
-than filed under limitations.
+Probing the morphology database (12 Aug 2026) shows the `rat` ambiguity **is a
+lexical class ambiguity**, decomposing cleanly by the `stemcat` field:
+
+| `stemcat` | analyses | `rat` | `lex` | gloss |
+|---|---|---|---|---|
+| `N/ap` | 22 | `i` | حاصِل | **income** + [fem.sg.] |
+| `Nall` | 11 | `r` | حاصِل | **holder** + [fem.sg.] |
+
+Both readings are grammatically licensed in both contexts, so there is nothing for
+context to resolve. The instrument is not failing to decide — without world
+knowledge there is genuinely nothing to decide.
+
+**Abstention is therefore correct behaviour for this lexeme, not an instrument
+shortcoming**, and the paper can say precisely what is being abstained on, with a
+dictionary gloss, rather than reporting a bare abstention rate.
 
 ---
 
