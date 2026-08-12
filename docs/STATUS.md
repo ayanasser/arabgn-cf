@@ -123,7 +123,7 @@ Still a smoke test — Tiers A/B only. Phase 6 is the binding form.
 | 6 — twin symmetry, all tiers | Phase 5 |
 | 7 — ArabJobs sweep → C1 tables | Phases 4–6, D9 |
 | 8 — generator | Phase 7; generation method undecided |
-| 9 — blinding, freeze, time anchor | External service (~1 h) |
+| 9 — blinding, freeze | ✅ **built** — HMAC blinding, ordering-leak detection, explicit-manifest freeze, CLI. Only the **external time anchor** still needs a human account (~1 h). |
 | 10 — analysis, pilot, power → C3 | GPU; σ²_cv definition (arch §7.3) |
 | 11 — pre-registration → C4 | C3 numbers |
 
@@ -160,6 +160,7 @@ Findings from each pass are recorded in the review log below.
 
 | Item | Pass 1 findings | Pass 2 findings |
 |---|---|---|
+| Phase 9 blinding/freeze | Test asserted `'f' not in token` — but `f` is a hex digit, so it appears in any digest by chance. A flawed assertion, not a leak. **Replaced** with an avalanche test (>30% of hex digits must change when polarity flips), which tests the property that matters. | `freeze.py` is pure by design but nothing could **run** it against the repo. **Added** `arabgn/freeze_cli.py` (I/O, unfrozen) with the real 11-source manifest, plus a test asserting the manifest never drifts behind `arabgn/analysis/`. Real hash computes: `edbb4935…`, and the CLI warns that it is NOT a pre-registration freeze while θ is unset. |
 | Phase 3 symmetry | Unused test imports; `genders_differ` missing from `__all__`. **Fixed**. | Added an end-to-end run through the real model — the pure-layer test used recorded masses and would never have caught this. **It failed, and the failure is real**: AB4 fires on `حاصلة` and not `حاصل`. Recorded as finding D14 and marked `xfail(strict=True)` rather than weakened. |
 | Phase 2B tagger | `rationality_mass` used `+` to sum float scores — **not associative**, so mass differed in the last bits by candidate order (0.5625 vs 0.5625000000000001). A real prohibition-6 violation: a mass near θ could resolve differently, and serialised output would not be byte-stable so the freeze hash would not reproduce. **Fixed**: `math.fsum`, exactly-rounded. Also `blind()` hardcoded `DocType.AD`. | `form_divergence` / `dominant_gender` missing from `__all__`; unused imports. **Fixed**. θ sweep over 9 real fixtures shows the feasible region is 2,249 grid points, **not** the ~7-point window ADR 001 estimated from three cases — risk is lower than recorded. |
 | Phase 1 normalisation | Guard baselined on raw input; NFC composition flagged as a violation. **Fixed** — baseline is now the NFC form. | — |

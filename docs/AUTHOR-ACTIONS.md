@@ -175,7 +175,7 @@ circumstance in which I touch a fixture.**
 | 10 | Author a stacked-diacritic fixture (shadda + vowel); expected value must be yours | Closes the ADR 005 gap |
 | 11 | Define σ²_cv in the SE formula — CV-level random effect or twin-discordance variance? One sentence | C4 freeze (arch §7.3, §10 #4) |
 | 12 | Declare the Holm family explicitly | C4 freeze |
-| 13 | Choose the external time anchor (OSF / AsPredicted / OpenTimestamps), ~1 h | Phase 9; without it C4 is not independently verifiable |
+| 13 | **Choose the external time anchor (OSF / AsPredicted / OpenTimestamps), ~1 h.** The freeze layer is now built and `external_anchor_required()` **raises** without one — a self-computed hash proves the config did not drift, not that analysis predates unblinding | Phase 9; without it C4 is not independently verifiable |
 | 14 | Chase ArabJobs redistribution permission | Phase 7 *release*, not analysis |
 | 15 | Choose the twin-CV generation method (template / LLM / hybrid) | Phase 8 |
 | 16 | Choose the Arabic encoder audit subject | Phase 10 |
